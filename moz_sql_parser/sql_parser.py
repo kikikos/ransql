@@ -63,6 +63,7 @@ keywords = {
     "else",
     "end",
     "from",
+    "to",
     "group by",
     "having",
     "in",

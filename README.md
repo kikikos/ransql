@@ -4,23 +4,21 @@
 ## Requirements: 
 ```
 $pip install mo-future
+$pip install pyparsing
+```
+
+## Usage example
+```python
+from moz_sql_parser import parse
+import json
+
+res1 = json.dumps(parse("select count(1) from jobs"))
+res2 = json.dumps(parse("select a as hello, b as world from jobs"))
+
+print(res1)
+print(res2)
 
 ```
-## Install
-
-    pip install moz-sql-parser
-
-## Usage
-
-    >>> from moz_sql_parser import parse
-    >>> import json
-    >>> json.dumps(parse("select count(1) from jobs"))
-    '{"select": {"value": {"count": 1}}, "from": "jobs"}'
-    
-Each SQL query is parsed to an object: Each clause is assigned to an object property of the same name. 
-
-    >>> json.dumps(parse("select a as hello, b as world from jobs"))
-    '{"select": [{"value": "a", "name": "hello"}, {"value": "b", "name": "world"}], "from": "jobs"}'
 
 The `SELECT` clause is an array of objects containing `name` and `value` properties. 
 
