@@ -53,6 +53,7 @@ join_keywords = {
     "left outer join",
 }
 keywords = {
+    "add", #ransql: add (col1, col2) as 3rd col
     "and",
     "as",
     "asc",
@@ -63,7 +64,6 @@ keywords = {
     "else",
     "end",
     "from",
-    "to",
     "group by",
     "having",
     "in",
@@ -79,6 +79,8 @@ keywords = {
     "order by",
     "select",
     "then",
+    "time", #ransql: fetch time interval
+    "to", #ransql: to a 3rd app
     "union",
     "union all",
     "using",
