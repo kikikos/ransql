@@ -5,7 +5,7 @@ import json
 
 
 def main():
-    res = json.dumps(parse("select count(1) from jobs to s"))
+    res = json.dumps(parse("select count(1) from jobs as jb ;"))
     print(res)
     res = json.dumps(parse("select a as hello, b as world from jobs"))
     print(res)
