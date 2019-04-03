@@ -88,13 +88,26 @@ keywords = {
     "where",
     "with"
 } | join_keywords
+
+
 locs = locals()
+
 reserved = []
+
 for k in keywords:
     name = k.upper().replace(" ", "")
     locs[name] = value = Keyword(k, caseless=True).setName(k.lower()).setDebugActions(*debug)
     reserved.append(value)
+
 RESERVED = MatchFirst(reserved)
+
+print("***reserved::",reserved)
+
+print("***RESERVED::",RESERVED)
+
+print("***BETWEEN::",BETWEEN)
+print("***TO::",TO)
+
 
 KNOWN_OPS = [
     (BETWEEN, AND),
@@ -318,6 +331,7 @@ selectColumn = Group(
     Group(expr).setName("expression1")("value").setDebugActions(*debug) + Optional(Optional(AS) + ident.copy().setName("column_name1")("name").setDebugActions(*debug)) |
     Literal('*')("value").setDebugActions(*debug)
 ).setName("column").addParseAction(to_select_call)
+
 
 table_source = (
     (
