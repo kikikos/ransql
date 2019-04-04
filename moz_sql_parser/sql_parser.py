@@ -342,6 +342,7 @@ selectColumn = Group(
     Literal('*')("value").setDebugActions(*debug)
 ).setName("column").addParseAction(to_select_call)
 
+"""
 operator = (
     (
         (
@@ -363,7 +364,7 @@ operator = (
     |
     ident.setName("operator").setDebugActions(*debug)
 )
-
+"""
 
 table_source = (
     (
@@ -401,7 +402,7 @@ selectStmt <<= Group(
     Group(Group(
         delimitedList(
             Group(
-                SELECT.suppress().setDebugActions(*debug) + delimitedList(selectColumn)("select") +
+                SELECT.suppress().setDebugActions(*debug) + delimitedList(selectColumn)("select") +    
                 Optional(
                     (FROM.suppress().setDebugActions(*debug) + delimitedList(Group(table_source)) + ZeroOrMore(join))("from") +
                     Optional(WHERE.suppress().setDebugActions(*debug) + expr.setName("where"))("where") +
@@ -423,8 +424,8 @@ selectStmt <<= Group(
     Optional(ORDERBY.suppress().setDebugActions(*debug) + delimitedList(Group(sortColumn))("orderby").setName("orderby")) +
     Optional(LIMIT.suppress().setDebugActions(*debug) + expr("limit")) +
     Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset")) +
-    Optional(TO.suppress().setDebugActions(*debug) + expr("to")) +
-    Optional(TIME.suppress().setDebugActions(*debug) + expr("time")) 
+    TIME.suppress().setDebugActions(*debug) + expr("time") +
+    TO.suppress().setDebugActions(*debug) + expr("to") 
 ).addParseAction(to_union_call)
 
 SQLParser = selectStmt
