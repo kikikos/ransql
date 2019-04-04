@@ -57,10 +57,12 @@ keywords = {
     "and",
     "as",
     "asc",
+    "avg", #ransql: avg operator
     "between",
     "case",
     "collate nocase",
     "desc",
+    "divide", #ransql: divide operator
     "else",
     "end",
     "from",
@@ -72,6 +74,8 @@ keywords = {
     "limit",
     "offset",
     "like",
+    "minus", #ransql: minus operator
+    "multiply", #ransql: multiply/times operator
     "not between",
     "not like",
     "on",
@@ -81,6 +85,7 @@ keywords = {
     "then",
     "time", #ransql: fetch time interval
     "to", #ransql: to a 3rd app
+    "top", #ransql: top (1,10) top 1-10 
     "union",
     "union all",
     "using",
@@ -196,6 +201,17 @@ def to_case_call(instring, tokensStart, retTokens):
         cases.append(elze)
     return {"case": cases}
 
+def to_to_call(instring, tokensStart, retTokens):
+    tok = retTokens
+    app=tok.app
+
+    return {"to": app}
+
+def to_time_call(instring, tokensStart, retTokens):
+    tok = retTokens
+    time_interval=tok.time
+
+    return {"time": time_interval}
 
 def to_when_call(instring, tokensStart, retTokens):
     tok = retTokens
