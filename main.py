@@ -17,24 +17,29 @@ def main():
     ORDER BY SUM(O.TotalPrice) DESC
 
     """
-    res = json.dumps(parse("SELECT COUNT(arrdelay)  FROM flight_delays LIMIT 10 ;"))
-    print(res)
-    res = json.dumps(parse("SELECT AVG(col) FROM flight_delays WHERE C1 = 1 ;"))
-    print(res)
-
-    res = json.dumps(parse("SELECT AVG(col) FROM flight_delays LIMIT 10 ;"))
-    print(res)
-
-    res = json.dumps(parse("SELECT MAX(arrdelay) FROM flight_delays LIMIT (1,10);"))
-    print(res)
-    res = json.dumps(parse("SELECT MIN(arrdelay) FROM flight_delays LIMIT 10;"))
-    print(res)
-
-    res = json.dumps(parse("SELECT SUM(arrdelay) FROM flight_delays LIMIT 10;"))
+    res = json.dumps(parse("SELECT COUNT(arrdelay)  FROM table1 LIMIT 10 ;"))
     print(res)
 
 
-    res = json.dumps(parse("SELECT ADD(col1, col2) as col3 FROM flight_delays LIMIT 10;"))
+    res = json.dumps(parse("SELECT AVG(col) FROM table1 LIMIT 10 ;"))
+    print(res)
+
+    res = json.dumps(parse("SELECT MAX(arrdelay) FROM table1 LIMIT (1,10);"))
+    print(res)
+    res = json.dumps(parse("SELECT MIN(arrdelay) FROM table1 LIMIT 10;"))
+    print(res)
+
+    res = json.dumps(parse("SELECT SUM(arrdelay) FROM table1 LIMIT 10;"))
+    print(res)
+
+    """
+    TODO: time 0.1, and TO app..
+    """
+
+    res = json.dumps(parse("SELECT AVG(total_pdu_bytes_rx) FROM eNB1 WHERE crnti=0 ;"))
+    print(res)
+
+    res = json.dumps(parse("SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10);"))
     print(res)
 if __name__ == "__main__":
     main()
