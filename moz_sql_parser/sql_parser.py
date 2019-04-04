@@ -106,14 +106,6 @@ for k in keywords:
 
 RESERVED = MatchFirst(reserved)
 
-print("***reserved::",reserved)
-
-print("***RESERVED::",RESERVED)
-
-print("***BETWEEN::",BETWEEN)
-print("***TO::",TO)
-
-
 KNOWN_OPS = [
     (BETWEEN, AND),
     (NOTBETWEEN, AND),
@@ -201,12 +193,14 @@ def to_case_call(instring, tokensStart, retTokens):
         cases.append(elze)
     return {"case": cases}
 
+#todo
 def to_to_call(instring, tokensStart, retTokens):
     tok = retTokens
     app=tok.app
 
     return {"to": app}
 
+#todo
 def to_time_call(instring, tokensStart, retTokens):
     tok = retTokens
     time_interval=tok.time
@@ -348,6 +342,28 @@ selectColumn = Group(
     Literal('*')("value").setDebugActions(*debug)
 ).setName("column").addParseAction(to_select_call)
 
+operator = (
+    (
+        (
+            Literal("(").setDebugActions(*debug).suppress() +
+            selectStmt +
+            Literal(")").setDebugActions(*debug).suppress()
+        ).setName("operator").setDebugActions(*debug)
+    )("value") +
+    Optional(
+        Optional(AS) +
+        ident("name").setName("operator alias").setDebugActions(*debug)
+    )
+    |
+    (
+        ident("value").setName("operator").setDebugActions(*debug) +
+        Optional(AS) +
+        ident("name").setName("operator alias").setDebugActions(*debug)
+    )
+    |
+    ident.setName("operator").setDebugActions(*debug)
+)
+
 
 table_source = (
     (
@@ -381,7 +397,7 @@ sortColumn = expr("value").setName("sort1").setDebugActions(*debug) + Optional(D
              expr("value").setName("sort2").setDebugActions(*debug)
 
 # define SQL tokens
-selectStmt << Group(
+selectStmt <<= Group(
     Group(Group(
         delimitedList(
             Group(
@@ -392,7 +408,13 @@ selectStmt << Group(
                     Optional(GROUPBY.suppress().setDebugActions(*debug) + delimitedList(Group(selectColumn))("groupby").setName("groupby")) +
                     Optional(HAVING.suppress().setDebugActions(*debug) + expr("having").setName("having")) +
                     Optional(LIMIT.suppress().setDebugActions(*debug) + expr("limit")) +
-                    Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset"))
+                    Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset"))+
+                    Optional(ADD.suppress().setDebugActions(*debug) + expr("add")) +
+                    Optional(AVG.suppress().setDebugActions(*debug) + expr("avg")) +
+                    Optional(DIVIDE.suppress().setDebugActions(*debug) + expr("divide")) +
+                    Optional(MINUS.suppress().setDebugActions(*debug) + expr("minus")) +
+                    Optional(MULTIPLY.suppress().setDebugActions(*debug) + expr("multiply")) +
+                    Optional(TOP.suppress().setDebugActions(*debug) + expr("top")) 
                 )
             ),
             delim=(UNION | UNIONALL)
@@ -400,11 +422,13 @@ selectStmt << Group(
     )("union"))("from") +
     Optional(ORDERBY.suppress().setDebugActions(*debug) + delimitedList(Group(sortColumn))("orderby").setName("orderby")) +
     Optional(LIMIT.suppress().setDebugActions(*debug) + expr("limit")) +
-    Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset"))
+    Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset")) +
+    Optional(TO.suppress().setDebugActions(*debug) + expr("to")) +
+    Optional(TIME.suppress().setDebugActions(*debug) + expr("time")) 
 ).addParseAction(to_union_call)
 
-
 SQLParser = selectStmt
+
 
 # IGNORE SOME COMMENTS
 oracleSqlComment = Literal("--") + restOfLine
