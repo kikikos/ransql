@@ -11,6 +11,9 @@ import urllib.parse
 
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
+    def do_HEAD(self):
+        self._set_headers()
+
     def _set_headers(self, status_code):
         self.send_response(status_code)
         self.send_header('Content-type', 'text/html')
@@ -33,11 +36,12 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             self._set_headers(200)
         else:
             try:
-                pass
+                #res = json.dumps(ransql_parse(payload))
+                
+                self._set_headers(200)
             except Exception as e:
                 e.print()
-
-                self._set_headers(400)
+                self.respond({'status': 500})
 
             
             
@@ -46,8 +50,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         
         #self.wfile.write("hi") #call sample function here
 
-    def do_HEAD(self):
-        self._set_headers()
 
 
 
@@ -81,13 +83,14 @@ def main():
 
     res = json.dumps(ransql_parse("SELECT SUM(arrdelay) FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
     print(res)
-    """
+    
     
     res = json.dumps(ransql_parse("SELECT AVG(total_pdu_bytes_rx) FROM eNB1 WHERE crnti=0 TIME 1 TO app(websocket,locathost,5000);"))
     print(res)
 
     res = json.dumps(ransql_parse("SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10) TIME 1 TO app(websocket,locathost,5000);"))
     print(res)
+    """
     
 if __name__ == "__main__":
     main()
