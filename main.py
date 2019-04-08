@@ -1,34 +1,44 @@
 #!/usr/bin/env python
 #from mo_future import text_type
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from moz_sql_parser import parse
 import json
 import SocketServer
+import SimpleHTTPServer
+import re
 
-
-class HttpServerHandler(BaseHTTPRequestHandler):
-    def _set_headers(self):
-        self.send_response(200)
+class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+    def _set_headers(self, status_code):
+        self.send_response(status_code)
         self.send_header('Content-type', 'text/html')
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
 
     def do_GET(self):
-        self._set_headers()
-        self.wfile.write("<html><body><h1>hi!</h1></body></html>")
+        if None != re.search('/*', self.path):
+            num = self.path.split('/')[-1]
+            print self.path.split('/')
+            #This URL will trigger our sample function and send what it returns back to the browser
+            self._set_headers(200)
+            self.wfile.write("str(num*num)") #call sample function here
+
+        else:
+            #serve files, and directory listings by following self.path from
+            #current working directory
+            #SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
+            self._set_headers(500)
+            self.wfile.write("not ok") #call sample function here
+
 
     def do_HEAD(self):
         self._set_headers()
+
         
-    def do_POST(self):
-        # Doesn't do anything with posted data
-        self._set_headers()
-        self.wfile.write("<html><body><h1>POST!</h1></body></html>")
-        
-def run_http(server_class=HTTPServer, handler_class=HttpServerHandler, port=8888):
-    server_address = ('', port)
-    httpd = server_class(server_address, handler_class)
-    print 'Starting httpd...'
+def run_api_server(port=8888):
+    #server_address = ('', port)
+    httpd = SocketServer.ThreadingTCPServer(('', port),RequestHandler) #server_class(server_address, handler_class)
+    print 'Starting httpd:'
     httpd.serve_forever()
+    print '??'
 
 
 def main():
@@ -69,6 +79,6 @@ if __name__ == "__main__":
     from sys import argv
 
     if len(argv) == 2:
-        run(port=int(argv[1]))
+        run_api_server(port=int(argv[1]))
     else:
-        run_http()
+        run_api_server()
