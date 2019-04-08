@@ -1,7 +1,34 @@
 #!/usr/bin/env python
 #from mo_future import text_type
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from moz_sql_parser import parse
 import json
+import SocketServer
+
+
+class HttpServerHandler(BaseHTTPRequestHandler):
+    def _set_headers(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+
+    def do_GET(self):
+        self._set_headers()
+        self.wfile.write("<html><body><h1>hi!</h1></body></html>")
+
+    def do_HEAD(self):
+        self._set_headers()
+        
+    def do_POST(self):
+        # Doesn't do anything with posted data
+        self._set_headers()
+        self.wfile.write("<html><body><h1>POST!</h1></body></html>")
+        
+def run_http(server_class=HTTPServer, handler_class=HttpServerHandler, port=8888):
+    server_address = ('', port)
+    httpd = server_class(server_address, handler_class)
+    print 'Starting httpd...'
+    httpd.serve_forever()
 
 
 def main():
@@ -38,3 +65,10 @@ def main():
     
 if __name__ == "__main__":
     main()
+
+    from sys import argv
+
+    if len(argv) == 2:
+        run(port=int(argv[1]))
+    else:
+        run_http()
