@@ -3,8 +3,8 @@
 
 ## Requirements: 
 ```
-$pip install mo-future
-$pip install pyparsing
+$pip3 install mo-future
+$pip3 install pyparsing
 ```
 
 ## Usage example

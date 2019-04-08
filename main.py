@@ -1,12 +1,16 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #from mo_future import text_type
-from moz_sql_parser import parse
+from moz_sql_parser import parse as ransql_parse
 import json
-import SocketServer
-import SimpleHTTPServer
-import re
+#import SocketServer
+import http.server
+import socketserver
+#import re
+import urllib.parse
+#import urllib
 
-class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+
+class RequestHandler(http.server.SimpleHTTPRequestHandler):
     def _set_headers(self, status_code):
         self.send_response(status_code)
         self.send_header('Content-type', 'text/html')
@@ -14,63 +18,75 @@ class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if None != re.search('/*', self.path):
-            num = self.path.split('/')[-1]
-            print self.path.split('/')
-            #This URL will trigger our sample function and send what it returns back to the browser
+        request_path = self.path
+        #print("request_path:",urllib.parse.unquote(request_path))
+        payload =  urllib.parse.unquote(request_path)
+        payload = payload[5:-1]
+        
+        print('req params:', payload ) #remove /?q=" at the begin and " at the end
+
+        if payload == "cancel-usecase-1":
+            #TODO
             self._set_headers(200)
-            self.wfile.write("str(num*num)") #call sample function here
-
+        elif payload =="cancel-usecase-2":
+            #TODO
+            self._set_headers(200)
         else:
-            #serve files, and directory listings by following self.path from
-            #current working directory
-            #SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
-            self._set_headers(500)
-            self.wfile.write("not ok") #call sample function here
+            try:
+                pass
+            except Exception as e:
+                e.print()
 
+                self._set_headers(400)
+
+            
+            
+
+
+        
+        #self.wfile.write("hi") #call sample function here
 
     def do_HEAD(self):
         self._set_headers()
 
+
+
         
 def run_api_server(port=8888):
-    #server_address = ('', port)
-    httpd = SocketServer.ThreadingTCPServer(('', port),RequestHandler) #server_class(server_address, handler_class)
-    print 'Starting httpd:'
-    httpd.serve_forever()
-    print '??'
+    requestHandler = RequestHandler#http.server.SimpleHTTPRequestHandler
+    with socketserver.TCPServer(("", port), requestHandler) as httpd:
+        print("serving at port", port)
+        httpd.serve_forever()
+
 
 
 def main():
-    res = json.dumps(parse("select count(1)  from jobs TIME 1 TO app(websocket,locathost,5000);"))
+    """
+    res = json.dumps(ransql_parse("select count(1)  from jobs TIME 1 TO app(websocket,locathost,5000);"))
     print(res)
-    res = json.dumps(parse("select a as hello, b as world from jobs TIME 1 TO app;"))
+    res = json.dumps(ransql_parse("select a as hello, b as world from jobs TIME 1 TO app;"))
     print(res)
    
-    res = json.dumps(parse("SELECT COUNT(arrdelay)  FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
+    res = json.dumps(ransql_parse("SELECT COUNT(arrdelay)  FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
     print(res)
 
 
-    res = json.dumps(parse("SELECT AVG(col) FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
+    res = json.dumps(ransql_parse("SELECT AVG(col) FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
     print(res)
 
-    res = json.dumps(parse("SELECT MAX(arrdelay) FROM table1 LIMIT (1,10) TIME 1 TO app(websocket,locathost,5000);"))
+    res = json.dumps(ransql_parse("SELECT MAX(arrdelay) FROM table1 LIMIT (1,10) TIME 1 TO app(websocket,locathost,5000);"))
     print(res)
-    res = json.dumps(parse("SELECT MIN(arrdelay) FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
+    res = json.dumps(ransql_parse("SELECT MIN(arrdelay) FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
     print(res)
 
-    res = json.dumps(parse("SELECT SUM(arrdelay) FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
+    res = json.dumps(ransql_parse("SELECT SUM(arrdelay) FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
     print(res)
+    """
     
-
-    """
-    TODO: time 0.1, and TO app..
-    """
-
-    res = json.dumps(parse("SELECT AVG(total_pdu_bytes_rx) FROM eNB1 WHERE crnti=0 TIME 1 TO app(websocket,locathost,5000);"))
+    res = json.dumps(ransql_parse("SELECT AVG(total_pdu_bytes_rx) FROM eNB1 WHERE crnti=0 TIME 1 TO app(websocket,locathost,5000);"))
     print(res)
 
-    res = json.dumps(parse("SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10) TIME 1 TO app(websocket,locathost,5000);"))
+    res = json.dumps(ransql_parse("SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10) TIME 1 TO app(websocket,locathost,5000);"))
     print(res)
     
 if __name__ == "__main__":

@@ -23,16 +23,13 @@
         <div class="row">
             <div class="col-10">
 
-                <form action="http://127.0.0.1:8888" method="get" id="form-usecase-1" name="form-usecase-1">
-                    Use case 1:
-                    <div class="form-group">
-                        <label for="textfield-usecase-1">Average receiving (rx) PDU in bytes at MAC layer from the
-                            targeted user equipment (UE)</label>
-                        <textarea class="form-control" id="textfield-usecase-1-sql" name="textfield-usecase-1-sql"
-                            rows="5"></textarea>
-                        <input type="hidden" id="hidden-usecase-1-cancel" name="hidden-usecase-1-cancel" value="false"> 
-                    </div>
-                </form>
+                Use case 1:
+                <div class="form-group">
+                    <label for="textfield-usecase-1">Average receiving (rx) PDU in bytes at MAC layer from the
+                        targeted user equipment (UE)</label>
+                    <textarea class="form-control" id="textfield-usecase-1-sql" rows="5"></textarea>
+                    <input type="hidden" id="hidden-usecase-1-cancel" name="hidden-usecase-1-cancel" value="false">
+                </div>
             </div>
             <div class="col-2">
                 <input id="submit-usecase-1" type="submit" class="btn btn-primary" value="Submit">
@@ -81,23 +78,23 @@
     <div class="container">
         <hr style="width: 100%; color: black; height: 3px;" />
         <div class="row">
-            <div class="col-9">
+            <div class="col-10">
+                    Use case 2: 
 
                 <div class="form-group">
-                    <label for="usecase-1-textfield">Use case 2: Finding the UE
+                    <label for="textfield-usecase-2-sql">Finding the UE
                         who consumes the most Physical Resource Blocks
                         (PRB) within a specific time interval for the uplink
                         and downlink transmission.</label>
 
 
-                    <textarea class="form-control" id="usecase-1-textfield" rows="5"></textarea>
+                    <textarea class="form-control" id="textfield-usecase-2-sql" rows="5"></textarea>
                 </div>
             </div>
 
-            <div class="col-3">
-                <button type="button" class="btn btn-primary">Submit</button>
-                <button type="button" class="btn btn-primary">Cancel</button>
-
+            <div class="col-2">
+                    <input id="submit-usecase-2" type="submit" class="btn btn-primary" value="Submit">
+                    <input id="cancel-usecase-2" type="submit" class="btn btn-secondary" value="Cancel">
             </div>
 
         </div>
@@ -142,26 +139,51 @@
 </body>
 
 <script>
-var request = new XMLHttpRequest()
-var url = 'http://127.0.0.1:8888';
-   
+
+    var usecase_1_sqlstatement = "SELECT AVG(total_pdu_bytes_rx) FROM eNB1 WHERE crnti=0 TIME 1 TO app(websocket,locathost,5000);";
+    var usecase_2_sqlstatement = "SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10) TIME 1 TO app(websocket,locathost,5000);";
+    document.getElementById("textfield-usecase-1-sql").value = usecase_1_sqlstatement;
+    document.getElementById("textfield-usecase-2-sql").value = usecase_2_sqlstatement;
 
 
-// Get the button, and when the user clicks on it, execute myFunction
-document.getElementById("submit-usecase-1").onclick = function() {
-    data="?sql=" + document.getElementById("textfield-usecase-1-sql").value
-    _url = url + data
-    request.open('GET', _url, true)
-    request.send()
-};
+    function submit_request(params) {
+        //console.log(name);
+        var request = new XMLHttpRequest()
+        var url = 'http://127.0.0.1:8888';
+        _url = url + params
+        request.open('GET', _url, true)
+        request.send()
+    }
 
-document.getElementById("cancel-usecase-1").onclick = function() {
-    document.getElementById("textfield-usecase-1-sql").value =""
-    data ="?cancel=true"
-    _url = url + data
-    request.open('GET', _url, true)
-    request.send()
-};
+
+    document.getElementById("submit-usecase-1").onclick = function () {
+        data = "?q=\"" + document.getElementById("textfield-usecase-1-sql").value + "\""
+        //_url = url + data
+        //request.open('GET', _url, true)
+        //request.send()
+        submit_request(data)
+    };
+
+    document.getElementById("cancel-usecase-1").onclick = function () {
+        //empty textfield and table
+        document.getElementById("textfield-usecase-1-sql").value = ""
+
+        data = "?q=\"cancel-usecase-1\""
+        submit_request(data)
+    };
+
+    document.getElementById("submit-usecase-2").onclick = function () {
+        data = "?q=\"" + document.getElementById("textfield-usecase-2-sql").value + "\""
+        submit_request(data)
+    };
+
+    document.getElementById("cancel-usecase-2").onclick = function () {
+        //empty textfield and table
+        document.getElementById("textfield-usecase-2-sql").value = ""
+
+        data = "?q=\"cancel-usecase-2\""
+        submit_request(data)
+    };
 
 
 </script>
