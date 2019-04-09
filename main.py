@@ -70,38 +70,43 @@ def run_http_server(port=8888):
         print("serving at port", port)
         httpd.serve_forever()
 
-def ws_send():
-    pass
 
-async def time(websocket, path):
-    
-    
+async def time(websocket):
     now = datetime.datetime.utcnow().isoformat() + 'Z'
-    await websocket.send(now)
     
-    """
-    while True:
-        now = datetime.datetime.utcnow().isoformat() + 'Z'
-        await websocket.send(now)
-        await asyncio.sleep(random.random() * 3)
-    """
+    await asyncio.sleep(random.random() * 3)
+    return await websocket.send(now)
+
+
+def run_websocket_server():
+    pass
+    
+
 
 
 def main():
     pass
     
 if __name__ == "__main__":
+    start_server = websockets.serve(time, '0.0.0.0', 5678)
+    loop = asyncio.new_event_loop()
+    asyncio.run_coroutine_threadsafe(time(start_server), loop)
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()
+
     #https://stackoverflow.com/questions/26270681/can-an-asyncio-event-loop-run-in-the-background-without-suspending-the-python-in
+    #https://youtu.be/L3RyxVOLjz8
     #loop = asyncio.get_event_loop()
     #t = threading.Thread(target=loop_in_thread, args=(loop,))
     #t.start()
 
+    
 
-    start_server = websockets.serve(time, '127.0.0.1', 5678)
-    asyncio.get_event_loop().run_until_complete(start_server)
-    loop = asyncio.get_event_loop()
-    t = threading.Thread(target=loop_in_thread, args=(loop,))
-    t.start()
+    #loop = asyncio.new_event_loop()
+    #asyncio.run_coroutine_threadsafe(run_websocket_server(), loop)
+    
+
+
 
     #asyncio.get_event_loop().run_forever()
     
