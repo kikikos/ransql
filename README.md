@@ -5,6 +5,9 @@
 ```
 $pip3 install mo-future
 $pip3 install pyparsing
+$pip3 install websockets
+$pip3 install kafka-python
+
 ```
 
 ## Usage example
@@ -21,6 +24,36 @@ print(res2)
 ```
 
 The `SELECT` clause is an array of objects containing `name` and `value` properties. 
+
+## More examples: 
+```
+res = json.dumps(ransql_parse("select count(1)  from jobs TIME 1 TO app(websocket,locathost,5000);"))
+print(res)
+
+res = json.dumps(ransql_parse("select a as hello, b as world from jobs TIME 1 TO app;"))
+print(res)
+   
+res = json.dumps(ransql_parse("SELECT COUNT(arrdelay)  FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
+print(res)
+
+res = json.dumps(ransql_parse("SELECT AVG(col) FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
+print(res)
+
+res = json.dumps(ransql_parse("SELECT MAX(arrdelay) FROM table1 LIMIT (1,10) TIME 1 TO app(websocket,locathost,5000);"))
+print(res)
+
+res = json.dumps(ransql_parse("SELECT MIN(arrdelay) FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
+print(res)
+
+res = json.dumps(ransql_parse("SELECT SUM(arrdelay) FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
+print(res)
+     
+res = json.dumps(ransql_parse("SELECT AVG(total_pdu_bytes_rx) FROM eNB1 WHERE crnti=0 TIME 1 TO app(websocket,locathost,5000);"))
+print(res)
+
+res = json.dumps(ransql_parse("SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10) TIME 1 TO app(websocket,locathost,5000);"))
+print(res)
+```
 
 ## Run Tests
 

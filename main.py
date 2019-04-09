@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
-#from mo_future import text_type
+
 from moz_sql_parser import parse as ransql_parse
-import json
-#import SocketServer
+import sys
 import http.server
 import socketserver
-#import re
-import urllib.parse
-#import urllib
+import urllib.parse as url_parse
+import json
+import asyncio
+import datetime
+import random
+import websockets
+import threading
 
+
+#import re
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_HEAD(self):
-        self._set_headers()
+        self._set_headers(200)
 
     def _set_headers(self, status_code):
         self.send_response(status_code)
@@ -23,81 +28,87 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         request_path = self.path
         #print("request_path:",urllib.parse.unquote(request_path))
-        payload =  urllib.parse.unquote(request_path)
+        payload =  url_parse.unquote(request_path)
         payload = payload[5:-1]
         
-        print('req params:', payload ) #remove /?q=" at the begin and " at the end
+        print('request params:', payload ) #remove /?q=" at the begin and " at the end
 
         if payload == "cancel-usecase-1":
             #TODO
-            self._set_headers(200)
+            content = self._handle_http(201, "cancel_usecase_1_ok")
+            self.wfile.write(content)
+
         elif payload =="cancel-usecase-2":
             #TODO
-            self._set_headers(200)
+            content = self._handle_http(202, "cancel_usecase_2_ok")
+            self.wfile.write(content)
+
         else:
             try:
-                #res = json.dumps(ransql_parse(payload))
+                res = json.dumps(ransql_parse(payload))
+                print(res)
+                content = self._handle_http(200, "parse_ok")
                 
-                self._set_headers(200)
+                self.wfile.write(content)
+
             except Exception as e:
-                e.print()
-                self.respond({'status': 500})
+                print(e)
+                content = self._handle_http(404, "parse_error")
+                self.wfile.write(content)
+                
 
-            
-            
-
-
-        
-        #self.wfile.write("hi") #call sample function here
-
-
-
+    def _handle_http(self, status_code, message):
+        #self.send_response(status_code)
+        self._set_headers(status_code)
+        content = message
+        return bytes(content, 'UTF-8')
 
         
-def run_api_server(port=8888):
+def run_http_server(port=8888):
     requestHandler = RequestHandler#http.server.SimpleHTTPRequestHandler
     with socketserver.TCPServer(("", port), requestHandler) as httpd:
         print("serving at port", port)
         httpd.serve_forever()
 
+def ws_send():
+    pass
+
+async def time(websocket, path):
+    
+    
+    now = datetime.datetime.utcnow().isoformat() + 'Z'
+    await websocket.send(now)
+    
+    """
+    while True:
+        now = datetime.datetime.utcnow().isoformat() + 'Z'
+        await websocket.send(now)
+        await asyncio.sleep(random.random() * 3)
+    """
 
 
 def main():
-    """
-    res = json.dumps(ransql_parse("select count(1)  from jobs TIME 1 TO app(websocket,locathost,5000);"))
-    print(res)
-    res = json.dumps(ransql_parse("select a as hello, b as world from jobs TIME 1 TO app;"))
-    print(res)
-   
-    res = json.dumps(ransql_parse("SELECT COUNT(arrdelay)  FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
-    print(res)
-
-
-    res = json.dumps(ransql_parse("SELECT AVG(col) FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
-    print(res)
-
-    res = json.dumps(ransql_parse("SELECT MAX(arrdelay) FROM table1 LIMIT (1,10) TIME 1 TO app(websocket,locathost,5000);"))
-    print(res)
-    res = json.dumps(ransql_parse("SELECT MIN(arrdelay) FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
-    print(res)
-
-    res = json.dumps(ransql_parse("SELECT SUM(arrdelay) FROM table1 LIMIT 10 TIME 1 TO app(websocket,locathost,5000);"))
-    print(res)
-    
-    
-    res = json.dumps(ransql_parse("SELECT AVG(total_pdu_bytes_rx) FROM eNB1 WHERE crnti=0 TIME 1 TO app(websocket,locathost,5000);"))
-    print(res)
-
-    res = json.dumps(ransql_parse("SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10) TIME 1 TO app(websocket,locathost,5000);"))
-    print(res)
-    """
+    pass
     
 if __name__ == "__main__":
-    main()
+    #https://stackoverflow.com/questions/26270681/can-an-asyncio-event-loop-run-in-the-background-without-suspending-the-python-in
+    #loop = asyncio.get_event_loop()
+    #t = threading.Thread(target=loop_in_thread, args=(loop,))
+    #t.start()
 
-    from sys import argv
 
-    if len(argv) == 2:
-        run_api_server(port=int(argv[1]))
+    start_server = websockets.serve(time, '127.0.0.1', 5678)
+    asyncio.get_event_loop().run_until_complete(start_server)
+    loop = asyncio.get_event_loop()
+    t = threading.Thread(target=loop_in_thread, args=(loop,))
+    t.start()
+
+    #asyncio.get_event_loop().run_forever()
+    
+
+    if len(sys.argv) == 2:
+        run_http_server(port=int(argv[1]))
     else:
-        run_api_server()
+        run_http_server()
+
+    
