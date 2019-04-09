@@ -79,7 +79,7 @@
         <hr style="width: 100%; color: black; height: 3px;" />
         <div class="row">
             <div class="col-10">
-                    Use case 2: 
+                Use case 2:
 
                 <div class="form-group">
                     <label for="textfield-usecase-2-sql">Finding the UE
@@ -93,8 +93,8 @@
             </div>
 
             <div class="col-2">
-                    <input id="submit-usecase-2" type="submit" class="btn btn-primary" value="Submit">
-                    <input id="cancel-usecase-2" type="submit" class="btn btn-secondary" value="Cancel">
+                <input id="submit-usecase-2" type="submit" class="btn btn-primary" value="Submit">
+                <input id="cancel-usecase-2" type="submit" class="btn btn-secondary" value="Cancel">
             </div>
 
         </div>
@@ -187,15 +187,15 @@
 
 
     var ws = new WebSocket("ws://127.0.0.1:5678/"),
-                messages = document.createElement('ul');
-            ws.onmessage = function (event) {
-                var messages = document.getElementsByTagName('ul')[0],
-                    message = document.createElement('li'),
-                    content = document.createTextNode(event.data);
-                message.appendChild(content);
-                messages.appendChild(message);
-            };
-            document.body.appendChild(messages);
+        messages = document.createElement('ul');
+    ws.onmessage = function (event) {
+        var messages = document.getElementsByTagName('ul')[0],
+            message = document.createElement('li'),
+            content = document.createTextNode(event.data);
+        message.appendChild(content);
+        messages.appendChild(message);
+    };
+    document.body.appendChild(messages);
 
 </script>
 
