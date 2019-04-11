@@ -26,6 +26,8 @@ DEBUG = False
 END = None
 
 all_exceptions = {}
+
+
 def record_exception(instring, loc, expr, exc):
     # if DEBUG:
     #     print ("Exception raised:" + _ustr(exc))
@@ -35,6 +37,7 @@ def record_exception(instring, loc, expr, exc):
 
 def nothing(*args):
     pass
+
 
 if DEBUG:
     debug = (None, None, None)
@@ -53,16 +56,16 @@ join_keywords = {
     "left outer join",
 }
 keywords = {
-    "add", #ransql: add (col1, col2) as 3rd col
+    "add",  # ransql: add (col1, col2) as 3rd col
     "and",
     "as",
     "asc",
-    "avg", #ransql: avg operator
+    "avg",  # ransql: avg operator
     "between",
     "case",
     "collate nocase",
     "desc",
-    "divide", #ransql: divide operator
+    "divide",  # ransql: divide operator
     "else",
     "end",
     "from",
@@ -74,8 +77,8 @@ keywords = {
     "limit",
     "offset",
     "like",
-    "minus", #ransql: minus operator
-    "multiply", #ransql: multiply/times operator
+    "minus",  # ransql: minus operator
+    "multiply",  # ransql: multiply/times operator
     "not between",
     "not like",
     "on",
@@ -83,9 +86,9 @@ keywords = {
     "order by",
     "select",
     "then",
-    "time", #ransql: fetch time interval
-    "to", #ransql: to a 3rd app
-    "top", #ransql: top (1,10) top 1-10 
+    "time",  # ransql: fetch time interval
+    "to",  # ransql: to a 3rd app
+    "top",  # ransql: top (1,10) top 1-10
     "union",
     "union all",
     "using",
@@ -101,7 +104,8 @@ reserved = []
 
 for k in keywords:
     name = k.upper().replace(" ", "")
-    locs[name] = value = Keyword(k, caseless=True).setName(k.lower()).setDebugActions(*debug)
+    locs[name] = value = Keyword(k, caseless=True).setName(
+        k.lower()).setDebugActions(*debug)
     reserved.append(value)
 
 RESERVED = MatchFirst(reserved)
@@ -193,23 +197,28 @@ def to_case_call(instring, tokensStart, retTokens):
         cases.append(elze)
     return {"case": cases}
 
-#todo
+# todo
+
+
 def to_to_call(instring, tokensStart, retTokens):
     tok = retTokens
-    app=tok.app
+    app = tok.app
 
     return {"to": app}
 
-#todo
+# todo
+
+
 def to_time_call(instring, tokensStart, retTokens):
     tok = retTokens
-    time_interval=tok.time
+    time_interval = tok.time
 
     return {"time": time_interval}
 
+
 def to_when_call(instring, tokensStart, retTokens):
     tok = retTokens
-    return {"when": tok.when, "then":tok.then}
+    return {"when": tok.when, "then": tok.then}
 
 
 def to_join_call(instring, tokensStart, retTokens):
@@ -254,6 +263,7 @@ def to_union_call(instring, tokensStart, retTokens):
         output["limit"] = tok.get('limit')
     return output
 
+
 def unquote(instring, tokensStart, retTokens):
     val = retTokens[0]
     if val.startswith("'") and val.endswith("'"):
@@ -263,7 +273,7 @@ def unquote(instring, tokensStart, retTokens):
         val = '"'+val[1:-1].replace('""', '\\"')+'"'
         # val = val.replace(".", "\\.")
     elif val.startswith('`') and val.endswith('`'):
-          val = "'" + val[1:-1].replace("``","`") + "'"
+        val = "'" + val[1:-1].replace("``", "`") + "'"
     elif val.startswith("+"):
         val = val[1:]
     un = ast.literal_eval(val)
@@ -275,15 +285,18 @@ def to_string(instring, tokensStart, retTokens):
     val = "'"+val[1:-1].replace("''", "\\'")+"'"
     return {"literal": ast.literal_eval(val)}
 
+
 # NUMBERS
-realNum = Regex(r"[+-]?(\d+\.\d*|\.\d+)([eE][+-]?\d+)?").addParseAction(unquote)
+realNum = Regex(
+    r"[+-]?(\d+\.\d*|\.\d+)([eE][+-]?\d+)?").addParseAction(unquote)
 intNum = Regex(r"[+-]?\d+([eE]\+?\d+)?").addParseAction(unquote)
 
 # STRINGS, NUMBERS, VARIABLES
 sqlString = Regex(r"\'(\'\'|\\.|[^'])*\'").addParseAction(to_string)
 identString = Regex(r'\"(\"\"|\\.|[^"])*\"').addParseAction(unquote)
 mysqlidentString = Regex(r'\`(\`\`|\\.|[^`])*\`').addParseAction(unquote)
-ident = Combine(~RESERVED + (delimitedList(Literal("*") | Word(alphas + "_", alphanums + "_$") | identString | mysqlidentString, delim=".", combine=True))).setName("identifier")
+ident = Combine(~RESERVED + (delimitedList(Literal("*") | Word(alphas + "_", alphanums + "_$")
+                                           | identString | mysqlidentString, delim=".", combine=True))).setName("identifier")
 
 # EXPRESSIONS
 expr = Forward()
@@ -395,27 +408,30 @@ join = (
 ).addParseAction(to_join_call)
 
 sortColumn = expr("value").setName("sort1").setDebugActions(*debug) + Optional(DESC("sort") | ASC("sort")) | \
-             expr("value").setName("sort2").setDebugActions(*debug)
+    expr("value").setName("sort2").setDebugActions(*debug)
 
 # define SQL tokens
 selectStmt <<= Group(
     Group(Group(
         delimitedList(
             Group(
-                SELECT.suppress().setDebugActions(*debug) + delimitedList(selectColumn)("select") +    
+                SELECT.suppress().setDebugActions(*debug) + delimitedList(selectColumn)("select") +
                 Optional(
-                    (FROM.suppress().setDebugActions(*debug) + delimitedList(Group(table_source)) + ZeroOrMore(join))("from") +
+                        (FROM.suppress().setDebugActions(*debug) + delimitedList(Group(table_source)) + ZeroOrMore(join))("from") +
                     Optional(WHERE.suppress().setDebugActions(*debug) + expr.setName("where"))("where") +
                     Optional(GROUPBY.suppress().setDebugActions(*debug) + delimitedList(Group(selectColumn))("groupby").setName("groupby")) +
                     Optional(HAVING.suppress().setDebugActions(*debug) + expr("having").setName("having")) +
                     Optional(LIMIT.suppress().setDebugActions(*debug) + expr("limit")) +
-                    Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset"))+
+                    Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset")) +
                     Optional(ADD.suppress().setDebugActions(*debug) + expr("add")) +
                     Optional(AVG.suppress().setDebugActions(*debug) + expr("avg")) +
                     Optional(DIVIDE.suppress().setDebugActions(*debug) + expr("divide")) +
                     Optional(MINUS.suppress().setDebugActions(*debug) + expr("minus")) +
                     Optional(MULTIPLY.suppress().setDebugActions(*debug) + expr("multiply")) +
                     Optional(TOP.suppress().setDebugActions(*debug) + expr("top")) 
+                    + Optional(TIME.suppress().setDebugActions(*debug) +  expr("time"))
+                    + Optional(TO.suppress().setDebugActions(*debug) + expr("to"))
+                    
                 )
             ),
             delim=(UNION | UNIONALL)
@@ -423,13 +439,11 @@ selectStmt <<= Group(
     )("union"))("from") +
     Optional(ORDERBY.suppress().setDebugActions(*debug) + delimitedList(Group(sortColumn))("orderby").setName("orderby")) +
     Optional(LIMIT.suppress().setDebugActions(*debug) + expr("limit")) +
-    Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset")) +
-    TIME.suppress().setDebugActions(*debug) + expr("time") +
-    TO.suppress().setDebugActions(*debug) + expr("to") 
+    Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset"))
 ).addParseAction(to_union_call)
 
-SQLParser = selectStmt
 
+SQLParser = selectStmt
 
 # IGNORE SOME COMMENTS
 oracleSqlComment = Literal("--") + restOfLine
