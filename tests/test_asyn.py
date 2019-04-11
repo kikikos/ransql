@@ -1,35 +1,43 @@
 #!/usr/bin/env python3
 
 import asyncio
-import time
 import datetime
+import random
+import websockets
+import asyncio
+import time
 
-async def display_date2(counter):
-    #end_time = loop.time() + 5.0
-    #print(counter,":::",datetime.datetime.now())
-    print(counter,"::","*")
-
-    time.sleep(5)
-    #await asyncio.sleep(5)
-    print(counter,"::","**")
-    
-
-async def display_date(loop):
-    end_time = loop.time() + 5.0
-    counter =0
+async def websocket_handler(websocket, path):
     while True:
-        #print(counter,":",datetime.datetime.now())
-        if (loop.time() + 1.0) >= end_time:
-            break
-        print(counter,":","*")
-        
-        display_date2(counter)#asyncio.sleep(1)
-        #time.sleep(1)
-        print(counter,":","**")
-        counter +=1
+        now = datetime.datetime.utcnow().isoformat() + 'Z'
+        await websocket.send(now)
+        await asyncio.sleep(random.random() * 3)
 
-loop = asyncio.get_event_loop()
-# Blocking call which returns when the display_date() coroutine is done
-loop.run_until_complete(display_date(loop))
+async def run_wb_server():
+    start_server = websockets.serve(websocket_handler, '127.0.0.1', 5678)
+    #asyncio.get_event_loop().run_until_complete(start_server)
+    #asyncio.get_event_loop().run_forever()
 
-loop.close()
+async def myfun1():    
+    print('- start {}th'.format(1))    
+    await asyncio.sleep(30)    
+    #time.sleep(1)
+    print('- finish {}th'.format(1))
+
+
+async def myfun2():    
+    print('-- start {}th'.format(2))    
+    await asyncio.sleep(1)    
+    #time.sleep(1)
+    print('-- finish {}th'.format(2))
+
+
+
+    
+loop= asyncio.get_event_loop()
+#myfun_list = (myfun(i) for i in range(10))
+myfun_list = (myfun1(),myfun2(), websockets.serve(websocket_handler, '127.0.0.1', 5678))
+print(".") 
+loop.run_until_complete(asyncio.gather(*myfun_list))
+loop.run_forever()
+print("..")
