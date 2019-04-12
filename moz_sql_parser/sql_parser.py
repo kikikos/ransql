@@ -260,33 +260,14 @@ def to_time_call(instring, tokensStart, retTokens):
 
 
 def to_to_call(instring, tokensStart, retTokens):
+    """
     print("to_to_call retTokens:",retTokens )
     print("to_to_call retTokens[0]:",retTokens[0] )
     print("to_to_call retTokens[2]:",retTokens[2])
+    """
     retTokens[2] = {"to":retTokens[2]}
-    print("to_to_call retTokens*", retTokens)
+    #print("to_to_call retTokens*", retTokens)
     return retTokens
-
-    #print("to_to_call retTokens[1][0]:",retTokens[1][0])
-    
-    """
-    key=""
-    for k in retTokens[1][0]: 
-        print("k:{} and v".format(k))
-        key = k
-    
-
-
-    #print("tim call retTokens[2]:",retTokens[2])
-    value =retTokens[1][0][key][0]
-    item = {key:value}
-
-    retTokens[1] = {'time': [item]}
-    
-    return retTokens
-
-    #return {"to": app}
-    """
 
 
 def to_union_call(instring, tokensStart, retTokens):

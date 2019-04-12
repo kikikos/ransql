@@ -141,7 +141,7 @@
 <script>
 
     var usecase_1_sqlstatement = "SELECT AVG(total_pdu_bytes_rx) FROM eNB1 WHERE crnti=0 TIME second(1) TO app(websocket, locathost, 5000);";
-    var usecase_2_sqlstatement = "SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10) TIME second(1) TO app(websocket, locathost, 5000);";
+    var usecase_2_sqlstatement = "SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);";
     document.getElementById("textfield-usecase-1-sql").value = usecase_1_sqlstatement;
     document.getElementById("textfield-usecase-2-sql").value = usecase_2_sqlstatement;
 
