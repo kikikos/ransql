@@ -75,7 +75,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(content)
 
             except Exception as e:
-                print(e)
+                print("parse error:", e)
                 content = self._handle_http(404, "parse_error")
                 self.wfile.write(content)
                 
