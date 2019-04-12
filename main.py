@@ -68,7 +68,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         else:
             try:
                 sql_in_json = json.dumps(ransql_parse(payload))
-                print(sql_in_json)
+                
                 dispath_service(sql_in_json)
                 content = self._handle_http(200, "parse_ok")
                 

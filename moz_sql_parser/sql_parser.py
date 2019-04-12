@@ -197,24 +197,6 @@ def to_case_call(instring, tokensStart, retTokens):
         cases.append(elze)
     return {"case": cases}
 
-# todo
-
-
-def to_to_call(instring, tokensStart, retTokens):
-    tok = retTokens
-    app = tok.app
-
-    return {"to": app}
-
-# todo
-
-
-def to_time_call(instring, tokensStart, retTokens):
-    tok = retTokens
-    time_interval = tok.time
-
-    return {"time": time_interval}
-
 
 def to_when_call(instring, tokensStart, retTokens):
     tok = retTokens
@@ -239,14 +221,61 @@ def to_join_call(instring, tokensStart, retTokens):
 
 def to_select_call(instring, tokensStart, retTokens):
     tok = retTokens[0].asDict()
+    #print("select tok:", tok)
 
     if tok.get('value')[0][0] == '*':
         return '*'
     else:
         return tok
 
+# todo
+
+
+def to_time_call(instring, tokensStart, retTokens):
+    """tok = retTokens[0].asDict()
+    time_interval = tok.time
+    """
+    print("tim call retTokens:",retTokens )
+    print("tim call retTokens[0]:",retTokens[0] )
+    #print("tim call retTokens[0]:",retTokens[0])
+    print("tim call retTokens[1]:",retTokens[1])
+    print("tim call retTokens[1][0]['second'][0]:",retTokens[1][0]['second'][0])
+
+    #print("tim call retTokens[2]:",retTokens[2])
+    value =retTokens[1][0]['second'][0]
+    item = {'second':value}
+
+    retTokens[1] = {'time': [item]}
+    
+    print("tim call retTokens[1]*:",retTokens[1])
+    print("tim call retTokens*:",retTokens)
+
+    return retTokens
+
+    #print("tim call retTokens[0][1]:",retTokens[0][1])
+    #print("tim call retTokens[1]:",retTokens[1])
+
+    #return {"time": time_interval}
+
+
+def to_to_call(instring, tokensStart, retTokens):
+    """
+    tok = retTokens[0].asDict()
+    app = tok.app
+    """
+    pass
+
+    #return {"to": app}
+
 
 def to_union_call(instring, tokensStart, retTokens):
+    """
+    print("instring:",instring)
+    print("tokensStart:",tokensStart)
+
+    print('to_union_call:', retTokens)
+    """
+
     tok = retTokens[0].asDict()
     unions = tok['from']['union']
     if len(unions) == 1:
@@ -355,29 +384,6 @@ selectColumn = Group(
     Literal('*')("value").setDebugActions(*debug)
 ).setName("column").addParseAction(to_select_call)
 
-"""
-operator = (
-    (
-        (
-            Literal("(").setDebugActions(*debug).suppress() +
-            selectStmt +
-            Literal(")").setDebugActions(*debug).suppress()
-        ).setName("operator").setDebugActions(*debug)
-    )("value") +
-    Optional(
-        Optional(AS) +
-        ident("name").setName("operator alias").setDebugActions(*debug)
-    )
-    |
-    (
-        ident("value").setName("operator").setDebugActions(*debug) +
-        Optional(AS) +
-        ident("name").setName("operator alias").setDebugActions(*debug)
-    )
-    |
-    ident.setName("operator").setDebugActions(*debug)
-)
-"""
 
 table_source = (
     (
@@ -407,40 +413,50 @@ join = (
     Optional((ON + expr("on")) | (USING + expr("using")))
 ).addParseAction(to_join_call)
 
-sortColumn = expr("value").setName("sort1").setDebugActions(*debug) + Optional(DESC("sort") | ASC("sort")) | \
-    expr("value").setName("sort2").setDebugActions(*debug)
+sortColumn = expr("value").setName("sort1").setDebugActions(*debug) + Optional(
+    DESC("sort") | ASC("sort")) | expr("value").setName("sort2").setDebugActions(*debug)
+
+time_interval = Group(expr).setName("time")("time").setDebugActions(*debug)
+
+to_app = expr("value").setName("app").setDebugActions(*debug)
 
 # define SQL tokens
-selectStmt <<= Group(
-    Group(Group(
-        delimitedList(
+selectStmt <<= delimitedList(
+    delimitedList(
+        Group(
             Group(
-                SELECT.suppress().setDebugActions(*debug) + delimitedList(selectColumn)("select") +
-                Optional(
-                        (FROM.suppress().setDebugActions(*debug) + delimitedList(Group(table_source)) + ZeroOrMore(join))("from") +
-                    Optional(WHERE.suppress().setDebugActions(*debug) + expr.setName("where"))("where") +
-                    Optional(GROUPBY.suppress().setDebugActions(*debug) + delimitedList(Group(selectColumn))("groupby").setName("groupby")) +
-                    Optional(HAVING.suppress().setDebugActions(*debug) + expr("having").setName("having")) +
-                    Optional(LIMIT.suppress().setDebugActions(*debug) + expr("limit")) +
-                    Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset")) +
-                    Optional(ADD.suppress().setDebugActions(*debug) + expr("add")) +
-                    Optional(AVG.suppress().setDebugActions(*debug) + expr("avg")) +
-                    Optional(DIVIDE.suppress().setDebugActions(*debug) + expr("divide")) +
-                    Optional(MINUS.suppress().setDebugActions(*debug) + expr("minus")) +
-                    Optional(MULTIPLY.suppress().setDebugActions(*debug) + expr("multiply")) +
-                    Optional(TOP.suppress().setDebugActions(*debug) + expr("top")) 
-                    + Optional(TIME.suppress().setDebugActions(*debug) +  expr("time"))
-                    + Optional(TO.suppress().setDebugActions(*debug) + expr("to"))
-                    
-                )
-            ),
-            delim=(UNION | UNIONALL)
-        )
-    )("union"))("from") +
-    Optional(ORDERBY.suppress().setDebugActions(*debug) + delimitedList(Group(sortColumn))("orderby").setName("orderby")) +
-    Optional(LIMIT.suppress().setDebugActions(*debug) + expr("limit")) +
-    Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset"))
-).addParseAction(to_union_call)
+                Group(
+                    delimitedList(
+                        Group(
+                            SELECT.suppress().setDebugActions(*debug) + delimitedList(selectColumn)("select") +
+                            Optional(
+                                (FROM.suppress().setDebugActions(*debug) + delimitedList(Group(table_source)) + ZeroOrMore(join))("from") +
+                                Optional(WHERE.suppress().setDebugActions(*debug) + expr.setName("where"))("where") +
+                                Optional(GROUPBY.suppress().setDebugActions(*debug) + delimitedList(Group(selectColumn))("groupby").setName("groupby")) +
+                                Optional(HAVING.suppress().setDebugActions(*debug) + expr("having").setName("having")) +
+                                Optional(LIMIT.suppress().setDebugActions(*debug) + expr("limit")) +
+                                Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset")) +
+                                Optional(ADD.suppress().setDebugActions(*debug) + expr("add")) +
+                                Optional(AVG.suppress().setDebugActions(*debug) + expr("avg")) +
+                                Optional(DIVIDE.suppress().setDebugActions(*debug) + expr("divide")) +
+                                Optional(MINUS.suppress().setDebugActions(*debug) + expr("minus")) +
+                                Optional(MULTIPLY.suppress().setDebugActions(*debug) + expr("multiply")) +
+                                Optional(TOP.suppress().setDebugActions(
+                                    *debug) + expr("top"))
+                                # + Optional(TIME.suppress().setDebugActions(*debug) + expr("time"))
+                                # + Optional(TO.suppress().setDebugActions(*debug) + expr("to"))
+                            )
+                        ), delim=(UNION | UNIONALL)
+                    )
+                )("union"))("from") +
+            Optional(ORDERBY.suppress().setDebugActions(*debug) + delimitedList(Group(sortColumn))("orderby").setName("orderby")) +
+            Optional(LIMIT.suppress().setDebugActions(*debug) + expr("limit")) +
+            Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset"))
+            # + Optional(TIME.suppress().setDebugActions(*debug) + expr("time")) +
+            #Optional(TO.suppress().setDebugActions(*debug) + expr("to"))
+        ).addParseAction(to_union_call)
+        + TIME.suppress().setDebugActions(*debug) + expr("time").setName("time")).addParseAction(to_time_call)  # add action
+    + TO.suppress().setDebugActions(*debug) + expr.setName("to")).addParseAction(to_to_call)  # add action
 
 
 SQLParser = selectStmt
