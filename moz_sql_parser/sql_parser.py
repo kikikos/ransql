@@ -457,7 +457,7 @@ selectStmt <<= delimitedList(
             # + Optional(TIME.suppress().setDebugActions(*debug) + expr("time")) +
             #Optional(TO.suppress().setDebugActions(*debug) + expr("to"))
         ).addParseAction(to_union_call)
-        + TIME.suppress().setDebugActions(*debug) + expr("time").setName("time")).addParseAction(to_time_call)  # add action
+        + Optional( TIME.suppress().setDebugActions(*debug) + expr("time").setName("time") ) ).addParseAction(to_time_call)  # add action
     + TO.suppress().setDebugActions(*debug) + expr.setName("to")).addParseAction(to_to_call)  # add action
 
 

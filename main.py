@@ -26,14 +26,29 @@ def exe_cmd(cmd):
 
 def dispath_service(service_items):
     print("services to dispatch:",service_items)
-    """
-    {"select": {"value": {"avg": "total_pdu_bytes_rx"}}, "from": "eNB1", "where": {"eq": ["crnti", 0]}}
-    {"select": {"value": {"add": ["ul", "dl"]}, "name": "total"}, "from": "eNB", "orderby": {"value": "total", "sort": "desc"}, "limit": [1, 10]}
+    """sql to map
+    request params: SELECT AVG(total_pdu_bytes_rx) FROM eNB1 WHERE crnti=0 TIME second(1) TO app(websocket, locathost, 5000);
+    - services to dispatch: [{"select": {"value": {"avg": "total_pdu_bytes_rx"}}, "from": "eNB1", "where": {"eq": ["crnti", 0]}}, {"time": {"second": 1}}, {"to": {"app": ["websocket", "locathost", 5000]}}]
+
+    request params: SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);
+    - services to dispatch: [{"select": {"value": {"add": ["ul", "dl"]}, "name": "total"}, "from": "eNB", "orderby": {"value": "total", "sort": "desc"}, "limit": [1, 10]}, {"time": {"ms": 1000}}, {"to": {"app": ["websocket", "locathost", 5000]}}]
     
-    print("select:", service_items['select'])
-    print("from:", service_items['from'])
-    print("where:", service_items['where'])
-    print("where:", service_items['where'])
+    case 1: 
+    (pre*)  counter how many services: oai -> oai-1, oai-1 -> oai-2 etc., oai-final
+    (0) from -> for source kafka topic
+    (1) where -> map to filter 
+    (2) operation: sum* & sum/items (ie, avg*) with time()
+    (3) show cols: select - show cols
+    (4) to : websocket -
+
+    case 2:
+    (pre*) counter services to topics:
+    (0) from -> getTopic()
+    (1) operation: ul + dl = total (add one col)
+    (2) sorting: *orderby,  with *time
+    (3) show rows vertical : *limit
+    (4) show cols: select - show all cols, with crnti
+    (5) to app
     """
 
 
