@@ -82,9 +82,13 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         else:
             try:
-                sql_in_json = json.dumps(ransql_parse(payload))
-                
-                dispath_service(sql_in_json)
+
+                for phrase in payload.split("|"):
+                    print("phrase:",phrase)
+
+                    sql_in_json = json.dumps(ransql_parse(phrase))
+                    
+                    dispath_service(sql_in_json)
                 content = self._handle_http(200, "parse_ok")
                 
                 self.wfile.write(content)
