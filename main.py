@@ -135,15 +135,6 @@ async def myfun1():
 
     
 if __name__ == "__main__":
-    phrase="SELECT AVG(total_pdu_bytes_rx)  FROM eNB1 WHERE crnti=0 time second(1) TO app(websocket, locathost, 5000);"
-
-    print("phrase:",phrase)
-
-    sql_in_json = json.dumps(ransql_parse(phrase))
-                    
-    dispath_service(sql_in_json)
-    """
-
     phrase="SELECT AVG(total_pdu_bytes_rx)  FROM eNB1 WHERE crnti=0"
 
     print("phrase:",phrase)
@@ -151,7 +142,18 @@ if __name__ == "__main__":
     sql_in_json = json.dumps(ransql_parse(phrase))
                     
     dispath_service(sql_in_json)
-"""
+    
+    
+    phrase="SELECT AVG(total_pdu_bytes_rx)  FROM eNB1 WHERE crnti=0  time second(1) TO app(websocket, locathost, 5000);"
+
+    print("phrase:",phrase)
+
+    sql_in_json = json.dumps(ransql_parse(phrase))
+                    
+    dispath_service(sql_in_json)
+    
+
+    
 
 
     """

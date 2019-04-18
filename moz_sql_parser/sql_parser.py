@@ -232,14 +232,15 @@ def to_select_call(instring, tokensStart, retTokens):
 
 
 def to_time_call(instring, tokensStart, retTokens):
+    print("tim call retTokens:",retTokens )
     """tok = retTokens[0].asDict()
     time_interval = tok.time
     
-    print("tim call retTokens:",retTokens )
+    
     print("tim call retTokens[0]:",retTokens[0] )
     print("tim call retTokens[1]:",retTokens[1])
     print("tim call retTokens[1][0]:",retTokens[1][0])
-    """
+    
     key=""
     for k in retTokens[1][0]: 
         print("k:{} and v".format(k))
@@ -247,11 +248,11 @@ def to_time_call(instring, tokensStart, retTokens):
         break #only read first one
 
 
-    #print("tim call retTokens[2]:",retTokens[2])
     value =retTokens[1][0][key][0]
     item = {key:value}
 
     retTokens[1] = {'time': [item]}
+    """
     """
     print("tim call retTokens[1]*:",retTokens[1])
     print("tim call retTokens*:",retTokens)
@@ -265,11 +266,11 @@ def to_to_call(instring, tokensStart, retTokens):
     
     print("to_to_call retTokens[0]:",retTokens[0] )
     
-    print("to_to_call retTokens[1]:",retTokens[1])
+    #print("to_to_call retTokens[1]:",retTokens[1])
     
     #retTokens[2] = {"to":retTokens[2]}
     #print("to_to_call retTokens*", retTokens)
-    return retTokens
+    #return retTokens
 
 
 def to_union_call(instring, tokensStart, retTokens):
@@ -459,8 +460,8 @@ selectStmt <<= delimitedList(
             # + Optional(TIME.suppress().setDebugActions(*debug) + expr("time")) +
             #Optional(TO.suppress().setDebugActions(*debug) + expr("to"))
         ).addParseAction(to_union_call)
-        + Optional (TIME.suppress().setDebugActions(*debug) + expr("time").setName("time") )).addParseAction(to_time_call)   # add action
-    + Optional( TO.suppress().setDebugActions(*debug) + expr.setName("to") ) ).addParseAction(to_to_call)  # add action
+        + Optional ( Optional(TIME.suppress().setDebugActions(*debug) + expr("multiply")).addParseAction(to_time_call) ))   # add action
+    + Optional( Optional(TO.suppress().setDebugActions(*debug) + expr.setName("to")).addParseAction(to_to_call)  ) )  # add action
 
 
 SQLParser = selectStmt
