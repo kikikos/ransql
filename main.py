@@ -135,29 +135,29 @@ async def myfun1():
 
     
 if __name__ == "__main__":
+    phrase="SELECT AVG(total_pdu_bytes_rx)  FROM eNB1 WHERE crnti=0 time second(1) TO app(websocket, locathost, 5000);"
+
+    print("phrase:",phrase)
+
+    sql_in_json = json.dumps(ransql_parse(phrase))
+                    
+    dispath_service(sql_in_json)
     """
-    pass configuration
+
+    phrase="SELECT AVG(total_pdu_bytes_rx)  FROM eNB1 WHERE crnti=0"
+
+    print("phrase:",phrase)
+
+    sql_in_json = json.dumps(ransql_parse(phrase))
+                    
+    dispath_service(sql_in_json)
+"""
+
+
     """
-
-
-    #https://stackoverflow.com/questions/26270681/can-an-asyncio-event-loop-run-in-the-background-without-suspending-the-python-in
-    #https://youtu.be/L3RyxVOLjz8
-    #loop = asyncio.get_event_loop()
-    #t = threading.Thread(target=loop_in_thread, args=(loop,))
-    #t.start()
-
     t_http_server = threading.Thread(target=run_http_server)
     t_http_server.daemon = True
     t_http_server.start()
-
-
-    """
-
-    if len(sys.argv) == 2:
-        run_http_server(port=int(argv[1]))
-    else:
-        run_http_server()
-    """
 
     websocket_server = websockets.serve(websocket_handler, '0.0.0.0', 5678)
     coroutines = (websocket_server, myfun1())
@@ -165,3 +165,4 @@ if __name__ == "__main__":
 
     asyncio.get_event_loop().run_until_complete(asyncio.gather(*coroutines))
     asyncio.get_event_loop().run_forever()
+    """

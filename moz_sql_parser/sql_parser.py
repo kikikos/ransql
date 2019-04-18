@@ -260,12 +260,14 @@ def to_time_call(instring, tokensStart, retTokens):
 
 
 def to_to_call(instring, tokensStart, retTokens):
-    """
+    
     print("to_to_call retTokens:",retTokens )
+    
     print("to_to_call retTokens[0]:",retTokens[0] )
-    print("to_to_call retTokens[2]:",retTokens[2])
-    """
-    retTokens[2] = {"to":retTokens[2]}
+    
+    print("to_to_call retTokens[1]:",retTokens[1])
+    
+    #retTokens[2] = {"to":retTokens[2]}
     #print("to_to_call retTokens*", retTokens)
     return retTokens
 
@@ -418,7 +420,7 @@ join = (
 sortColumn = expr("value").setName("sort1").setDebugActions(*debug) + Optional(
     DESC("sort") | ASC("sort")) | expr("value").setName("sort2").setDebugActions(*debug)
 
-time_interval = Group(expr).setName("time")("time").setDebugActions(*debug)
+time_interval = Group(  TIME.suppress().setDebugActions(*debug) ).addParseAction(to_time_call)
 
 to_app = expr("value").setName("app").setDebugActions(*debug)
 
@@ -457,7 +459,7 @@ selectStmt <<= delimitedList(
             # + Optional(TIME.suppress().setDebugActions(*debug) + expr("time")) +
             #Optional(TO.suppress().setDebugActions(*debug) + expr("to"))
         ).addParseAction(to_union_call)
-        + Optional( TIME.suppress().setDebugActions(*debug) + expr("time").setName("time") ) ).addParseAction(to_time_call)  # add action
+        + Optional (TIME.suppress().setDebugActions(*debug) + expr("time").setName("time") )).addParseAction(to_time_call)   # add action
     + Optional( TO.suppress().setDebugActions(*debug) + expr.setName("to") ) ).addParseAction(to_to_call)  # add action
 
 
