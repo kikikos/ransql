@@ -75,6 +75,7 @@ keywords = {
     "not in",
     "is",
     "limit",
+    "obj", #objectize a list
     "offset",
     "like",
     "minus",  # ransql: minus operator

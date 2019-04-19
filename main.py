@@ -13,8 +13,33 @@ import random
 import threading
 import subprocess
 
-
 #import re
+
+class Operator():
+    def __init__(self):
+        pass
+
+class Where():
+    def __init__(self):
+        pass
+
+class Selector():
+    def __init__(self):
+        pass
+
+
+class Timer():
+    def __init__(self):
+        pass
+
+class Fromer():
+    def __init__(self):
+        pass
+
+class Toer():
+    def __init__(self):
+        pass
+
 
 def exe_cmd(cmd):
     try:
@@ -135,36 +160,44 @@ async def myfun1():
 
     
 if __name__ == "__main__":
-    phrase="SELECT AVG(total_pdu_bytes_rx)  FROM eNB1 WHERE crnti=0"
-
-    print("phrase:",phrase)
-
-    sql_in_json = json.dumps(ransql_parse(phrase))
-                    
-    dispath_service(sql_in_json)
-    
-    
-    phrase="SELECT AVG(total_pdu_bytes_rx)  FROM eNB1 WHERE crnti=0  time second(1) TO app(websocket, locathost, 5000);"
-
-    print("phrase:",phrase)
-
-    sql_in_json = json.dumps(ransql_parse(phrase))
-                    
-    dispath_service(sql_in_json)
-    
-
-    
-
-
     """
+    phrase="SELECT OBJ(ue_list)  FROM eNB1 to table(ues)"
+
+    print("phrase:",phrase)
+
+    sql_in_json = json.dumps(ransql_parse(phrase))
+                    
+    dispath_service(sql_in_json)
+    
+    
+    phrase="SELECT AVG(total_pdu_bytes_rx)  FROM ues WHERE crnti=0  TIME second(1) TO app(websocket, locathost, 5000);"
+    #SELECT AVG(total_pdu_bytes_rx) FROM ues WHERE crnti=0 TIME second(1) TO app(websocket, locathost, 5000);
+    print("phrase:",phrase)
+
+    sql_in_json = json.dumps(ransql_parse(phrase))
+                    
+    dispath_service(sql_in_json)
+    
+    phrase="SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);"
+
+    print("phrase:",phrase)
+
+    sql_in_json = json.dumps(ransql_parse(phrase))
+                    
+    dispath_service(sql_in_json)
+    """
+    
     t_http_server = threading.Thread(target=run_http_server)
     t_http_server.daemon = True
     t_http_server.start()
 
     websocket_server = websockets.serve(websocket_handler, '0.0.0.0', 5678)
-    coroutines = (websocket_server, myfun1())
+    coroutines = (websocket_server) 
+    asyncio.get_event_loop().run_until_complete(asyncio.gather(coroutines))    
 
+    # or more coroutines example: 
+    # coroutines = (websocket_server, myfun1())
+    # asyncio.get_event_loop().run_until_complete(asyncio.gather(*coroutines))
 
-    asyncio.get_event_loop().run_until_complete(asyncio.gather(*coroutines))
     asyncio.get_event_loop().run_forever()
-    """
+    
