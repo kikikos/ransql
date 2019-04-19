@@ -257,7 +257,7 @@ def to_time_call(instring, tokensStart, retTokens):
     print("tim call retTokens[1]*:",retTokens[1])
     print("tim call retTokens*:",retTokens)
     """
-    return retTokens
+    return {"time":retTokens}
 
 
 def to_to_call(instring, tokensStart, retTokens):
@@ -270,7 +270,7 @@ def to_to_call(instring, tokensStart, retTokens):
     
     #retTokens[2] = {"to":retTokens[2]}
     #print("to_to_call retTokens*", retTokens)
-    #return retTokens
+    return {"to":retTokens}
 
 
 def to_union_call(instring, tokensStart, retTokens):
