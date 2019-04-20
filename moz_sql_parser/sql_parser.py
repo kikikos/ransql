@@ -430,7 +430,7 @@ to_app = expr("value").setName("app").setDebugActions(*debug)
 
 # define SQL tokens
 selectStmt <<= delimitedList(
-    delimitedList(
+    #delimitedList(
         Group(
             Group(
                 Group(
@@ -461,7 +461,7 @@ selectStmt <<= delimitedList(
             Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset"))
             + Optional(TIME.suppress().setDebugActions(*debug) + expr("time")) 
         ).addParseAction(to_union_call)
-        + Optional ( Optional(TIME.suppress().setDebugActions(*debug) + expr("multiply")).addParseAction(to_time_call) ))   # add action
+        #+ Optional ( Optional(TIME.suppress().setDebugActions(*debug) + expr("multiply")).addParseAction(to_time_call) ))   # add action
     + Optional( Optional(TO.suppress().setDebugActions(*debug) + expr.setName("to")).addParseAction(to_to_call)  ) )  # add action
 
 
