@@ -15,11 +15,24 @@ import subprocess
 
 #import re
 
+class TopicProcessor():
+    def __init__(self):
+        pass
+    def count(self):
+        return 0
+
 class Operator():
+    ADD="add"
+    AVG="avg"
+    OBJ="obj"
+    MINUS="minus"
+    MULTIPLY="multiply"
+    TOP="top"
+
     def __init__(self):
         pass
 
-class Where():
+class Wherer():
     def __init__(self):
         pass
 
@@ -49,8 +62,28 @@ def exe_cmd(cmd):
     except Exception as e:    
         print("exe_cmd error:", e)
 
-def dispath_service(service_items):
-    print("services to dispatch:",service_items)
+def dispath_service(services):
+    print("services to dispatch:{}".format(services))
+    
+    for service in json.loads(services):
+        print("service:{}".format( service))
+        if not service['select'] == None:
+            pass
+        if not service['time'] == None:
+            pass
+        if not service['to'] == None:
+            pass
+
+
+
+
+    #print( "type:",type(services))
+    """
+    for service in services:
+        
+        print( "service {}".format(service))
+    """
+    
     """sql to map
     request params: SELECT AVG(total_pdu_bytes_rx) FROM eNB1 WHERE crnti=0 TIME second(1) TO app(websocket, locathost, 5000);
     - services to dispatch: [{"select": {"value": {"avg": "total_pdu_bytes_rx"}}, "from": "eNB1", "where": {"eq": ["crnti", 0]}}, {"time": {"second": 1}}, {"to": {"app": ["websocket", "locathost", 5000]}}]
@@ -160,7 +193,7 @@ async def myfun1():
 
     
 if __name__ == "__main__":
-    """
+    
     phrase="SELECT OBJ(ue_list)  FROM eNB1 to table(ues)"
 
     print("phrase:",phrase)
@@ -200,4 +233,4 @@ if __name__ == "__main__":
     # asyncio.get_event_loop().run_until_complete(asyncio.gather(*coroutines))
 
     asyncio.get_event_loop().run_forever()
-    
+    """

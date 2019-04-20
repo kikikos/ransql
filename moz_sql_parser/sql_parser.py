@@ -233,7 +233,7 @@ def to_select_call(instring, tokensStart, retTokens):
 
 
 def to_time_call(instring, tokensStart, retTokens):
-    print("tim call retTokens:",retTokens )
+    #print("tim call retTokens:",retTokens )
     """tok = retTokens[0].asDict()
     time_interval = tok.time
     
@@ -263,9 +263,9 @@ def to_time_call(instring, tokensStart, retTokens):
 
 def to_to_call(instring, tokensStart, retTokens):
     
-    print("to_to_call retTokens:",retTokens )
+    #print("to_to_call retTokens:",retTokens )
     
-    print("to_to_call retTokens[0]:",retTokens[0] )
+    #print("to_to_call retTokens[0]:",retTokens[0] )
     
     #print("to_to_call retTokens[1]:",retTokens[1])
     
