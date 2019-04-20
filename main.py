@@ -64,31 +64,72 @@ def exe_cmd(cmd):
 
 def dispatch_select(service):
     for k, v in service.items():
-        print("select: {}:{}".format(k,v))
+        if k == 'select':
+            print("select: k:{}, v:{}".format(k,v))
+        elif k == 'from':
+            print("from: k:{}, v:{}".format(k,v))
+        elif k == 'time':
+            print("select time: k:{}, v:{}".format(k,v))
 
-def dispatch_time(service):
+
+def dispatch_where(service):
     for k, v in service.items():
-        print("time: {}:{}".format(k,v))
+        if k=="eq":
+            print("where: k:{}, v:{}".format(k,v))
+
+
+def dispatch_orderby(service):
+    for k, v in service.items():
+        print("orderby: k:{}, v:{}".format(k,v))
+
+def dispatch_limit(service):
+    for k, v in service.items():
+        
+        print("limit: k:{}, v:{}".format(k,v))
+
 
 def dispatch_to(service):
     for k, v in service.items():
-        print("to: {}:{}".format(k,v))
+        if k =='app':
+            print("to app: k:{}, v:{}".format(k,v))
+        elif k =='table' or k =='sink':
+            print("to table: k:{}, v:{}".format(k,v))
 """
 def dispatch_where(service):
     for k, v in service.items():
         print("where: {}:{}".format(k,v))
 """
+
+def chain_topics(services):
+    """
+    (pre*)  counter how many services: oai -> oai-1, oai-1 -> oai-2 etc., oai-final
+    (0) [+1 topic]: from + operatoin(obj + time, avg, add) -> for source kafka topic
+    (1) [+1 topic]: where -> filter 
+    (2) [+1 topic]: orderby, time, desc/asc
+    (4) [+1 topic]: limit[1,10],
+    (5) [+1 topic]: to : app/table
+    """
+    return []
+
 def dispath_service(services):
     print("services to dispatch:{}".format(services))
     
     for service in json.loads(services):
         #print("service:{}".format( service))
+        topics = chain_topics(services)
         for key , value in service.items():
-            #print("{}: {}".format(key, value))
+            #print("{}: {}".format( key, value))
             if key == "select":
                 dispatch_select(service)
-            elif key == "time":
-                dispatch_time(service)
+            elif key == "orderby":
+                dispatch_orderby(service)
+
+            elif key == "limit":
+                dispatch_limit(service)
+            
+            
+            elif key == "where":
+                dispatch_where(service)
             elif key == "to":
                 dispatch_to(service)
             #print("value: {}".format())
@@ -108,23 +149,6 @@ def dispath_service(services):
 
     request params: SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);
     - services to dispatch: [{"select": {"value": {"add": ["ul", "dl"]}, "name": "total"}, "from": "eNB", "orderby": {"value": "total", "sort": "desc"}, "limit": [1, 10]}, {"time": {"ms": 1000}}, {"to": {"app": ["websocket", "locathost", 5000]}}]
-    
-    case 1: 
-    (pre*)  counter how many services: oai -> oai-1, oai-1 -> oai-2 etc., oai-final
-    (0) from -> for source kafka topic
-    (1) where -> map to filter 
-    (2) operation: sum* & sum/items (ie, avg*) with time()
-    (3) show cols: select - show cols
-    (4) to : websocket -
-
-    case 2:
-    (pre*) counter services to topics:
-    (0) from -> getTopic()
-    (1) operation: ul + dl = total (add one col)
-    (2) sorting: *orderby,  with *time
-    (3) show rows vertical : *limit
-    (4) show cols: select - show all cols, with crnti
-    (5) to app
     """
 
 
