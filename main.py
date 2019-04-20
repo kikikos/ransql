@@ -216,10 +216,11 @@ if __name__ == "__main__":
     sql_in_json = json.dumps(ransql_parse(phrase))              
     dispath_service(sql_in_json)  
 
-    phrase="SELECT AVG(total_pdu_bytes_rx) FROM ues WHERE crnti=0  TIME second(1) TO app(websocket, locathost, 5000);"
+    phrase="SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, locathost, 5000);"
     sql_in_json = json.dumps(ransql_parse(phrase))         
     dispath_service(sql_in_json)
-
+    
+    
     phrase="SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
     sql_in_json = json.dumps(ransql_parse(phrase))          
     dispath_service(sql_in_json)

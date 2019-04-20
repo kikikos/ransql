@@ -296,6 +296,8 @@ def to_union_call(instring, tokensStart, retTokens):
         output["orderby"] = tok.get('orderby')
     if tok.get('limit'):
         output["limit"] = tok.get('limit')
+    if tok.get('time'):
+        output["time"] = tok.get('time')
     return output
 
 
@@ -435,6 +437,7 @@ selectStmt <<= delimitedList(
                     delimitedList(
                         Group(
                             SELECT.suppress().setDebugActions(*debug) + delimitedList(selectColumn)("select") +
+                            Optional(TIME.suppress().setDebugActions(*debug) + expr("time"))+
                             Optional(
                                 (FROM.suppress().setDebugActions(*debug) + delimitedList(Group(table_source)) + ZeroOrMore(join))("from") +
                                 Optional(WHERE.suppress().setDebugActions(*debug) + expr.setName("where"))("where") +
@@ -449,8 +452,6 @@ selectStmt <<= delimitedList(
                                 Optional(MULTIPLY.suppress().setDebugActions(*debug) + expr("multiply")) +
                                 Optional(TOP.suppress().setDebugActions(
                                     *debug) + expr("top"))
-                                # + Optional(TIME.suppress().setDebugActions(*debug) + expr("time"))
-                                # + Optional(TO.suppress().setDebugActions(*debug) + expr("to"))
                             )
                         ), delim=(UNION | UNIONALL)
                     )
@@ -458,8 +459,7 @@ selectStmt <<= delimitedList(
             Optional(ORDERBY.suppress().setDebugActions(*debug) + delimitedList(Group(sortColumn))("orderby").setName("orderby")) +
             Optional(LIMIT.suppress().setDebugActions(*debug) + expr("limit")) +
             Optional(OFFSET.suppress().setDebugActions(*debug) + expr("offset"))
-            # + Optional(TIME.suppress().setDebugActions(*debug) + expr("time")) +
-            #Optional(TO.suppress().setDebugActions(*debug) + expr("to"))
+            + Optional(TIME.suppress().setDebugActions(*debug) + expr("time")) 
         ).addParseAction(to_union_call)
         + Optional ( Optional(TIME.suppress().setDebugActions(*debug) + expr("multiply")).addParseAction(to_time_call) ))   # add action
     + Optional( Optional(TO.suppress().setDebugActions(*debug) + expr.setName("to")).addParseAction(to_to_call)  ) )  # add action

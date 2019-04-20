@@ -140,7 +140,7 @@
 
 <script>
 
-    var usecase_1_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT AVG(total_pdu_bytes_rx) FROM ues WHERE crnti=0  TIME second(1) TO app(websocket, locathost, 5000);";
+    var usecase_1_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0 TO app(websocket, locathost, 5000);";
     var usecase_2_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);";
     //var usecase_2_sqlstatement = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM enb1-ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);";
     document.getElementById("textfield-usecase-1-sql").value = usecase_1_sqlstatement;
