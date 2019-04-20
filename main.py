@@ -62,18 +62,36 @@ def exe_cmd(cmd):
     except Exception as e:    
         print("exe_cmd error:", e)
 
+def dispatch_select(service):
+    for k, v in service.items():
+        print("select: {}:{}".format(k,v))
+
+def dispatch_time(service):
+    for k, v in service.items():
+        print("time: {}:{}".format(k,v))
+
+def dispatch_to(service):
+    for k, v in service.items():
+        print("to: {}:{}".format(k,v))
+"""
+def dispatch_where(service):
+    for k, v in service.items():
+        print("where: {}:{}".format(k,v))
+"""
 def dispath_service(services):
     print("services to dispatch:{}".format(services))
     
     for service in json.loads(services):
-        print("service:{}".format( service))
-        if not service['select'] == None:
-            pass
-        if not service['time'] == None:
-            pass
-        if not service['to'] == None:
-            pass
-
+        #print("service:{}".format( service))
+        for key , value in service.items():
+            #print("{}: {}".format(key, value))
+            if key == "select":
+                dispatch_select(service)
+            elif key == "time":
+                dispatch_time(service)
+            elif key == "to":
+                dispatch_to(service)
+            #print("value: {}".format())
 
 
 
@@ -194,32 +212,23 @@ async def myfun1():
     
 if __name__ == "__main__":
     
-    phrase="SELECT OBJ(ue_list)  FROM eNB1 to table(ues)"
+    phrase="SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
+    sql_in_json = json.dumps(ransql_parse(phrase))              
+    dispath_service(sql_in_json)  
 
-    print("phrase:",phrase)
+    phrase="SELECT AVG(total_pdu_bytes_rx) FROM ues WHERE crnti=0  TIME second(1) TO app(websocket, locathost, 5000);"
+    sql_in_json = json.dumps(ransql_parse(phrase))         
+    dispath_service(sql_in_json)
 
-    sql_in_json = json.dumps(ransql_parse(phrase))
-                    
+    phrase="SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
+    sql_in_json = json.dumps(ransql_parse(phrase))          
+    dispath_service(sql_in_json)
+
+    phrase="SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);"
+    sql_in_json = json.dumps(ransql_parse(phrase))                    
     dispath_service(sql_in_json)
     
-    
-    phrase="SELECT AVG(total_pdu_bytes_rx)  FROM ues WHERE crnti=0  TIME second(1) TO app(websocket, locathost, 5000);"
-    #SELECT AVG(total_pdu_bytes_rx) FROM ues WHERE crnti=0 TIME second(1) TO app(websocket, locathost, 5000);
-    print("phrase:",phrase)
-
-    sql_in_json = json.dumps(ransql_parse(phrase))
-                    
-    dispath_service(sql_in_json)
-    
-    phrase="SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);"
-
-    print("phrase:",phrase)
-
-    sql_in_json = json.dumps(ransql_parse(phrase))
-                    
-    dispath_service(sql_in_json)
     """
-    
     t_http_server = threading.Thread(target=run_http_server)
     t_http_server.daemon = True
     t_http_server.start()
