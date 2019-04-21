@@ -15,6 +15,8 @@ import subprocess
 
 #import re
 
+flink_services=[]
+
 class Flink():
     def __init__(self):
         self.log4j2="-Dlog4j.configurationFile=\"./conf/log4j2.xml\""
@@ -25,35 +27,41 @@ class Flink():
         self.group_id=""
         self.thread_nums = 1
 
-
-class FlinkObjectizer(Flink):
-    def __init__(self):
-        self.col=""
-
-class FlinkAvg(Flink):
-    def __init__(self):
-        self.col=""
+class TimeWindow():
+    def __init(self):
         self.time_unit="second"
         self.time_value=1
 
 
+
+class FlinkObjectizer(Flink):
+    def __init__(self):
+        super().__init__()
+        self.col=""
+
+class FlinkAvg(Flink, TimeWindow):
+    def __init__(self):
+        super().__init__()
+        self.col=""
+
+
 class FlinkAdd(Flink):
     def __init__(self):
+        super().__init__()
         self.col1=""
         self.col2=""
         self.as_name=""
 
 class FlinkFilter(Flink):
     def __init__(self):
+        super().__init__()
         self.col_key=""
         self.col_value=""
         self.op_sign="eq" #lt, gt
 
-class FlinkSorter(Flink):
+class FlinkSorter(Flink, TimeWindow):
     def __init__(self):
         self.col=""
-        self.time_unit="second"
-        self.time_value=1
         self.order="desc" #desc or asc
 
 class TopicProcessor():
@@ -76,31 +84,6 @@ class Operator():
         pass
 
 
-class Wherer():
-    def __init__(self):
-        pass
-
-
-class Selector():
-    def __init__(self):
-        pass
-
-
-class Timer():
-    def __init__(self):
-        pass
-
-
-class Fromer():
-    def __init__(self):
-        pass
-
-
-class Toer():
-    def __init__(self):
-        pass
-
-
 def exe_cmd(cmd):
     try:
         print("shell: ", cmd)
@@ -111,29 +94,64 @@ def exe_cmd(cmd):
 
 
 def dispatch_select(service):
+    global flink_services
+    slt={
+        'operator':'',
+        'cols':[],
+        'alias':'',
+        'sort':'', #desc/asc
+        'limite':[],
+        'from':'',
+        't_unit':'',
+        't_value':0
+    }
+
     for k, v in service.items():
         print("**select: k:{}, v:{}".format(k, v))
         if k == 'select':
             
             for operation, col in v['value'].items():
+                slt['operator'] =operation
                 if operation == 'obj':
                     """
                     obj -> map and flatMap
                     """
                     print("obj op: {}".format(col))
+                    
+                    slt['cols'].append(col) # =[col] 
+                    #select_operator=operation
+                    #select_col=col
+
                 elif operation == 'avg':
                     """
                     avg -> map with windows
                     """
                     print("avg op: {}".format(col))
+                    slt['cols'].append(col)
+                    
+
                 elif operation == 'add':
-
                     print("add op: {}".format(col))
+                    slt['cols'].append(col[0])
+                    slt['cols'].append(col[1])
+                    slt['alias'] = v['name']
 
+
+                    
         elif k == 'from':
-            print("from: k:{}, v:{}".format(k, v))
+            print("***from: k:{}, v:{}".format(k, v))
+            slt['from'] = v
+
         elif k == 'time':
-            print("select time: k:{}, v:{}".format(k, v))
+            #print("select time: k:{}, v:{}".format(k, v))
+            for t_unit, t_value in v.items():
+                slt['t_unit']= t_unit
+                slt['t_value'] = t_value
+    
+    print("*****slt['cols'] and slt['alias']: {} and {}".format(slt['cols'], slt['alias']))
+
+
+    #flink_services.append(flink)
 
 
 def dispatch_to(service):
