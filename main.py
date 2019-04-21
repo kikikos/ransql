@@ -15,6 +15,46 @@ import subprocess
 
 #import re
 
+class Flink():
+    def __init__(self):
+        self.log4j2="-Dlog4j.configurationFile=\"./conf/log4j2.xml\""
+        self.topic_input=""
+        self.topic_output=""
+        self.brokers=""
+        self.zookeeper=""
+        self.group_id=""
+        self.thread_nums = 1
+
+
+class FlinkObjectizer(Flink):
+    def __init__(self):
+        self.col=""
+
+class FlinkAvg(Flink):
+    def __init__(self):
+        self.col=""
+        self.time_unit="second"
+        self.time_value=1
+
+
+class FlinkAdd(Flink):
+    def __init__(self):
+        self.col1=""
+        self.col2=""
+        self.as_name=""
+
+class FlinkFilter(Flink):
+    def __init__(self):
+        self.col_key=""
+        self.col_value=""
+        self.op_sign="eq" #lt, gt
+
+class FlinkSorter(Flink):
+    def __init__(self):
+        self.col=""
+        self.time_unit="second"
+        self.time_value=1
+        self.order="desc" #desc or asc
 
 class TopicProcessor():
     def __init__(self):
@@ -72,14 +112,22 @@ def exe_cmd(cmd):
 
 def dispatch_select(service):
     for k, v in service.items():
+        print("**select: k:{}, v:{}".format(k, v))
         if k == 'select':
-            #print("select: k:{}, v:{}".format(k, v))
+            
             for operation, col in v['value'].items():
                 if operation == 'obj':
+                    """
+                    obj -> map and flatMap
+                    """
                     print("obj op: {}".format(col))
                 elif operation == 'avg':
+                    """
+                    avg -> map with windows
+                    """
                     print("avg op: {}".format(col))
                 elif operation == 'add':
+
                     print("add op: {}".format(col))
 
         elif k == 'from':
@@ -87,6 +135,14 @@ def dispatch_select(service):
         elif k == 'time':
             print("select time: k:{}, v:{}".format(k, v))
 
+
+def dispatch_to(service):
+    for k, v in service.items():
+        print("**to: k:{}, v:{}".format(k, v))
+        if k == 'app':
+            print("to app: k:{}, v:{}".format(k, v))
+        elif k == 'table' or k == 'sink':
+            print("to table: k:{}, v:{}".format(k, v))
 
 def dispatch_where(service):
     for k, v in service.items():
@@ -104,20 +160,15 @@ def dispatch_limit(service):
 
         print("limit: k:{}, v:{}".format(k, v))
 
-
-def dispatch_to(service):
+def dispatch_from(service):
     for k, v in service.items():
-        if k == 'app':
-            print("to app: k:{}, v:{}".format(k, v))
-        elif k == 'table' or k == 'sink':
-            print("to table: k:{}, v:{}".format(k, v))
+        print("where: k:{}, v:{}".format(k, v))
 
 
-"""
-def dispatch_where(service):
+def dispatch_time(service):
     for k, v in service.items():
-        print("where: {}:{}".format(k,v))
-"""
+        print("time: k:{}, v:{}".format(k, v))
+
 
 
 def chain_topics(services):
@@ -139,9 +190,19 @@ def dispath_service(services):
         #print("service:{}".format( service))
         topics = chain_topics(services)
         for key, value in service.items():
-            print("service ---- {}: {}".format( key, value))
+            #print("service ---- {}: {}".format(key, value))
             if key == "select":
                 dispatch_select(service)
+
+            elif key == "to":
+                dispatch_to(service)  
+            """
+            elif key == "from":
+                dispatch_from(service)  
+            
+            elif key == "time":
+                dispatch_time(service)
+
             elif key == "orderby":
                 dispatch_orderby(service)
 
@@ -150,8 +211,9 @@ def dispath_service(services):
 
             elif key == "where":
                 dispatch_where(service)
-            elif key == "to":
-                dispatch_to(service)
+            """
+        
+            
             #print("value: {}".format())
 
     #print( "type:",type(services))
