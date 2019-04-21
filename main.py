@@ -98,16 +98,19 @@ def dispatch_select(service):
     slt={
         'operator':'',
         'cols':[],
-        'alias':'',
+        'col_alias':'',
+        'order_col':'',
         'sort':'', #desc/asc
-        'limite':[],
+        'limit':[],
         'from':'',
         't_unit':'',
-        't_value':0
+        't_value':0,
+        'to_type':'',
+        'to_conf':[]
     }
 
     for k, v in service.items():
-        print("**select: k:{}, v:{}".format(k, v))
+        #print("**select: k:{}, v:{}".format(k, v))
         if k == 'select':
             
             for operation, col in v['value'].items():
@@ -116,7 +119,7 @@ def dispatch_select(service):
                     """
                     obj -> map and flatMap
                     """
-                    print("obj op: {}".format(col))
+                    #print("obj op: {}".format(col))
                     
                     slt['cols'].append(col) # =[col] 
                     #select_operator=operation
@@ -126,21 +129,27 @@ def dispatch_select(service):
                     """
                     avg -> map with windows
                     """
-                    print("avg op: {}".format(col))
+                    #print("avg op: {}".format(col))
                     slt['cols'].append(col)
                     
-
                 elif operation == 'add':
-                    print("add op: {}".format(col))
+                    #print("add op: {}".format(col))
                     slt['cols'].append(col[0])
                     slt['cols'].append(col[1])
-                    slt['alias'] = v['name']
-
-
+                    slt['col_alias'] = v['name']
                     
         elif k == 'from':
-            print("***from: k:{}, v:{}".format(k, v))
+            #print("***from: k:{}, v:{}".format(k, v))
             slt['from'] = v
+
+        elif k == 'limit':
+            #print("***from: k:{}, v:{}".format(k, v))
+            slt['limit'] = v
+
+        elif k == 'orderby':
+            #print("***from: k:{}, v:{}".format(k, v))
+            slt['order_col'] = v['value']
+            slt['sort'] = v['sort']
 
         elif k == 'time':
             #print("select time: k:{}, v:{}".format(k, v))
@@ -148,7 +157,7 @@ def dispatch_select(service):
                 slt['t_unit']= t_unit
                 slt['t_value'] = t_value
     
-    print("*****slt['cols'] and slt['alias']: {} and {}".format(slt['cols'], slt['alias']))
+    print("*****slt: {} ".format(slt))
 
 
     #flink_services.append(flink)
