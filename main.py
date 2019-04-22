@@ -25,35 +25,37 @@ operators = {
     'sorter': {'value': 'orderby', 'priority': 2, 'app': ''},
 }
 
-flink = {
-    'session': {  # for kafka group.id
-        'ip_port': '',
-        'submit_button': '',
-        'id': 0,
-        'phrase': 0
-    },
-    'input_topic': '',
-    'output_topic': '',
-    'brokers': '',
-    'zookeeper': '',
-    'log4j2': '-Dlog4j.configurationFile="./conf/log4j2.xml"',
-    'operator': {
-        'type': '',  # filter -> avg, add, obj -> sorter(orderby)
-        'cols': [],
-        'col_alias': '',
-        'sign': '',  # for filter: eg, lt, gt
-        'order_col': '',
-        'sorter': {'limit': [], 'order': ''},  # desc/asc
-        # 'limit': [],
-        'from': '',
-        't_unit': '',
-        't_value': 0,
-        'to_type': '',
-        'to_conf': []
-    }
-}
 
 flink_services = []
+
+class Flink():
+    def __init__(self):
+        self.session = {  # for kafka group.id
+            'ip_port': '',
+            'submit_button': '',
+            'id': 0,
+            'phrase': 0
+        }
+        self.input_topic = ''
+        self.output_topic = ''
+        self.brokers = ''
+        self.zookeeper = ''
+        self.log4j2 = '-Dlog4j.configurationFile="./conf/log4j2.xml"'
+        self.operator = {
+            'type': '',  # filter -> avg, add, obj -> sorter(orderby)
+            'cols': [],
+            'values': [],
+            'col_alias': '',
+            'sign': '',  # for filter: eq, lt, gt, gte, lte, neq
+            'order_col': '',
+            'sorter': {'limit': [], 'order': ''},  # desc/asc
+            # 'limit': [],
+            'from': '',
+            't_unit': '',
+            't_value': 0,
+            'to_type': '',
+            'to_conf': []
+        }
 
 
 def exe_cmd(cmd):
@@ -204,53 +206,69 @@ def chain_topics(services):
     return []
 
 
-def dispath_service(services,session, phrase):
-    print("services to dispatch {} with session {}, phrase {}".format(services, session, phrase))
+def dispath_service(services, session, phrase):
+    global flink_services
+    print("services to dispatch {} with session {}, phrase {}".format(
+        services, session, phrase))
 
     for service in json.loads(services):
         #print("service:{}".format( service))
+        flink = Flink()
         for key, value in service.items():
-            print("***service {}: {}".format(key, value))
-            """
+            
+            flink.session['id'] = session
+            flink.session['phrase'] = phrase
+
+            print("***service key: {} and value: {}".format(key, value))
+
             if key == "select":
-                dispatch_select(service)
-
-            elif key == "to":
-                dispatch_to(service)
-            
-            elif key == "from":
-                dispatch_from(service)  
-            
-            elif key == "time":
-                dispatch_time(service)
-
-            elif key == "orderby":
-                dispatch_orderby(service)
-
-            elif key == "limit":
-                dispatch_limit(service)
+                # dispatch_select(service)
+                for op, col in value['value'].items():
+                    flink.operator['type'] = op
+                    
+                    if op == 'obj':                    
+                        flink.operator['cols'].append(col)
+                    elif op == 'avg':                    
+                        flink.operator['cols'].append(col)
+                    elif op == 'add':
+                        flink.operator['cols'].append(col[0])
+                        flink.operator['cols'].append(col[1])                    
+                        flink.operator['col_alias'] =  value['name']
 
             elif key == "where":
-                dispatch_where(service)
-            """
+                # dispatch_from(service)
+                flink.operator['type'] =  'filter'
+                for sign, col in value.items():
+                    flink.operator['sign'] =  sign
+                    #print("+++col : {}".format(col))
+                    flink.operator['cols'].append(col[0]) 
+                    flink.operator['values'].append(col[1])
 
-            #print("value: {}".format())
+            elif key == "from":
+                flink.operator['from'] =  value
 
-    #print( "type:",type(services))
-    """
-    for service in services:
-        
-        print( "service {}".format(service))
-    """
+            elif key == "time":
+                for t_unit, t_value in value.items():
+                    flink.operator['t_unit'] = t_unit
+                    flink.operator['t_value'] = t_value
 
-    """sql to map
-    request params: SELECT AVG(total_pdu_bytes_rx) FROM eNB1 WHERE crnti=0 TIME second(1) TO app(websocket, locathost, 5000);
-    - services to dispatch: [{"select": {"value": {"avg": "total_pdu_bytes_rx"}}, "from": "eNB1", "where": {"eq": ["crnti", 0]}}, {"time": {"second": 1}}, {"to": {"app": ["websocket", "locathost", 5000]}}]
+            elif key == "orderby":
+                # dispatch_orderby(service)
+                flink.operator['type'] = 'sorter'
+                flink.operator['order_col'] = value['value']
+                flink.operator['sorter']['order'] = value['sort']
 
-    request params: SELECT ADD(ul, dl) as total FROM eNB ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);
-    - services to dispatch: [{"select": {"value": {"add": ["ul", "dl"]}, "name": "total"}, "from": "eNB", "orderby": {"value": "total", "sort": "desc"}, "limit": [1, 10]}, {"time": {"ms": 1000}}, {"to": {"app": ["websocket", "locathost", 5000]}}]
-    """
+            elif key == "limit":
+                # dispatch_limit(service)
+                flink.operator['sorter']['limit'] = value
 
+            elif key == "to":
+                # dispatch_to(service)
+                for to_type, to_conf in value.items():
+                    flink.operator['to_type'] = to_type
+                    flink.operator['to_conf'] = to_conf
+
+        flink_services.append(flink)
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_HEAD(self):
@@ -341,7 +359,7 @@ async def myfun1():
 
 if __name__ == "__main__":
 
-    statements=[]
+    statements = []
 
     phrase = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
     phrase += "| SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, locathost, 5000);"
@@ -350,15 +368,18 @@ if __name__ == "__main__":
     phrase = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
     phrase += "| SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);"
     statements.append(phrase)
-   
 
     for textfield in range(0, 2):
-        phrase_counter=0
+        phrase_counter = 0
         for phrase in statements[textfield].split("|"):
             sql_in_json = json.dumps(ransql_parse(phrase))
 
             dispath_service(sql_in_json, textfield, phrase_counter)
-            phrase_counter+=1
+            phrase_counter += 1
+
+    for f in flink_services:
+      print( "flink_services: {}".format(f.__dict__))
+
 
     """
     t_http_server = threading.Thread(target=run_http_server)
