@@ -67,7 +67,6 @@ class FlinkSorter(Flink, TimeWindow):
 class TopicProcessor():
     def __init__(self):
         pass
-
     def count(self):
         return 0
 
@@ -92,10 +91,10 @@ def exe_cmd(cmd):
     except Exception as e:
         print("exe_cmd error:", e)
 
-
-def dispatch_select(service):
-    global flink_services
-    slt={
+def get_dispatcher():
+    
+    return {
+        'log4j2':'-Dlog4j.configurationFile="./conf/log4j2.xml"',
         'operator':'',
         'cols':[],
         'col_alias':'',
@@ -103,11 +102,24 @@ def dispatch_select(service):
         'sort':'', #desc/asc
         'limit':[],
         'from':'',
+        'filter':False,
+        'sign':'',
         't_unit':'',
         't_value':0,
         'to_type':'',
         'to_conf':[]
     }
+def prioritize_services():
+    """
+    (1) where -> filter
+    (2) operator -> avg, obj, add
+    (3) to: 
+    """
+    
+    pass
+
+def dispatch_select(service):
+    slt=get_dispatcher()
 
     for k, v in service.items():
         #print("**select: k:{}, v:{}".format(k, v))
@@ -150,6 +162,11 @@ def dispatch_select(service):
             #print("***from: k:{}, v:{}".format(k, v))
             slt['order_col'] = v['value']
             slt['sort'] = v['sort']
+        
+        elif k == 'where':
+            #print("***from: k:{}, v:{}".format(k, v))
+            slt['filter'] = True
+            slt['sign'] = "eq"
 
         elif k == 'time':
             #print("select time: k:{}, v:{}".format(k, v))
