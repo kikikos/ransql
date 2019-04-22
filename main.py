@@ -14,73 +14,46 @@ import threading
 import subprocess
 
 #import re
+input_topics = []
+output_topics = []
+sessions = []
+operators = {
+    'filter': {'value': 'where', 'priority': 0, 'app': 'FlinkFilter.java'},
+    'obj': {'value': 'obj', 'priority': 1, 'app': ''},
+    'avg': {'value': 'avg', 'priority': 1, 'app': ''},
+    'add': {'value': 'add', 'priority': 1, 'app': ''},
+    'sorter': {'value': 'orderby', 'priority': 2, 'app': ''},
+}
 
-flink_services=[]
+flink = {
+    'session': {  # for kafka group.id
+        'ip_port': '',
+        'submit_button': '',
+        'id': 0,
+        'phrase': 0
+    },
+    'input_topic': '',
+    'output_topic': '',
+    'brokers': '',
+    'zookeeper': '',
+    'log4j2': '-Dlog4j.configurationFile="./conf/log4j2.xml"',
+    'operator': {
+        'type': '',  # filter -> avg, add, obj -> sorter(orderby)
+        'cols': [],
+        'col_alias': '',
+        'sign': '',  # for filter: eg, lt, gt
+        'order_col': '',
+        'sorter': {'limit': [], 'order': ''},  # desc/asc
+        # 'limit': [],
+        'from': '',
+        't_unit': '',
+        't_value': 0,
+        'to_type': '',
+        'to_conf': []
+    }
+}
 
-class Flink():
-    def __init__(self):
-        self.log4j2="-Dlog4j.configurationFile=\"./conf/log4j2.xml\""
-        self.topic_input=""
-        self.topic_output=""
-        self.brokers=""
-        self.zookeeper=""
-        self.group_id=""
-        self.thread_nums = 1
-
-class TimeWindow():
-    def __init(self):
-        self.time_unit="second"
-        self.time_value=1
-
-
-
-class FlinkObjectizer(Flink):
-    def __init__(self):
-        super().__init__()
-        self.col=""
-
-class FlinkAvg(Flink, TimeWindow):
-    def __init__(self):
-        super().__init__()
-        self.col=""
-
-
-class FlinkAdd(Flink):
-    def __init__(self):
-        super().__init__()
-        self.col1=""
-        self.col2=""
-        self.as_name=""
-
-class FlinkFilter(Flink):
-    def __init__(self):
-        super().__init__()
-        self.col_key=""
-        self.col_value=""
-        self.op_sign="eq" #lt, gt
-
-class FlinkSorter(Flink, TimeWindow):
-    def __init__(self):
-        self.col=""
-        self.order="desc" #desc or asc
-
-class TopicProcessor():
-    def __init__(self):
-        pass
-    def count(self):
-        return 0
-
-
-class Operator():
-    ADD = "add"
-    AVG = "avg"
-    OBJ = "obj"
-    MINUS = "minus"
-    MULTIPLY = "multiply"
-    TOP = "top"
-
-    def __init__(self):
-        pass
+flink_services = []
 
 
 def exe_cmd(cmd):
@@ -91,51 +64,55 @@ def exe_cmd(cmd):
     except Exception as e:
         print("exe_cmd error:", e)
 
+
 def get_dispatcher():
-    
+
     return {
-        'log4j2':'-Dlog4j.configurationFile="./conf/log4j2.xml"',
-        'operator':'',
-        'cols':[],
-        'col_alias':'',
-        'order_col':'',
-        'sort':'', #desc/asc
-        'limit':[],
-        'from':'',
-        'filter':False,
-        'sign':'',
-        't_unit':'',
-        't_value':0,
-        'to_type':'',
-        'to_conf':[]
+        'log4j2': '-Dlog4j.configurationFile="./conf/log4j2.xml"',
+        'operator': '',
+        'cols': [],
+        'col_alias': '',
+        'order_col': '',
+        'sort': '',  # desc/asc
+        'limit': [],
+        'from': '',
+        'filter': False,
+        'sign': '',
+        't_unit': '',
+        't_value': 0,
+        'to_type': '',
+        'to_conf': []
     }
-def prioritize_services():
+
+
+def chain_services():
     """
-    (1) where -> filter
-    (2) operator -> avg, obj, add
-    (3) to: 
+    (1) where -> filter: *required: from and to
+    (2) operator -> avg, obj, add: *required: from and to
+    (3) orderby/limit/asc -> sorter: *required: from and to
     """
-    
+
     pass
 
+
 def dispatch_select(service):
-    slt=get_dispatcher()
+    slt = get_dispatcher()
 
     for k, v in service.items():
         #print("**select: k:{}, v:{}".format(k, v))
         if k == 'select':
-            
+
             for operation, col in v['value'].items():
-                slt['operator'] =operation
+                slt['operator'] = operation
                 if operation == 'obj':
                     """
                     obj -> map and flatMap
                     """
                     #print("obj op: {}".format(col))
-                    
-                    slt['cols'].append(col) # =[col] 
-                    #select_operator=operation
-                    #select_col=col
+
+                    slt['cols'].append(col)  # =[col]
+                    # select_operator=operation
+                    # select_col=col
 
                 elif operation == 'avg':
                     """
@@ -143,13 +120,13 @@ def dispatch_select(service):
                     """
                     #print("avg op: {}".format(col))
                     slt['cols'].append(col)
-                    
+
                 elif operation == 'add':
                     #print("add op: {}".format(col))
                     slt['cols'].append(col[0])
                     slt['cols'].append(col[1])
                     slt['col_alias'] = v['name']
-                    
+
         elif k == 'from':
             #print("***from: k:{}, v:{}".format(k, v))
             slt['from'] = v
@@ -162,7 +139,7 @@ def dispatch_select(service):
             #print("***from: k:{}, v:{}".format(k, v))
             slt['order_col'] = v['value']
             slt['sort'] = v['sort']
-        
+
         elif k == 'where':
             #print("***from: k:{}, v:{}".format(k, v))
             slt['filter'] = True
@@ -171,13 +148,12 @@ def dispatch_select(service):
         elif k == 'time':
             #print("select time: k:{}, v:{}".format(k, v))
             for t_unit, t_value in v.items():
-                slt['t_unit']= t_unit
+                slt['t_unit'] = t_unit
                 slt['t_value'] = t_value
-    
+
     print("*****slt: {} ".format(slt))
 
-
-    #flink_services.append(flink)
+    # flink_services.append(flink)
 
 
 def dispatch_to(service):
@@ -187,6 +163,7 @@ def dispatch_to(service):
             print("to app: k:{}, v:{}".format(k, v))
         elif k == 'table' or k == 'sink':
             print("to table: k:{}, v:{}".format(k, v))
+
 
 def dispatch_where(service):
     for k, v in service.items():
@@ -204,6 +181,7 @@ def dispatch_limit(service):
 
         print("limit: k:{}, v:{}".format(k, v))
 
+
 def dispatch_from(service):
     for k, v in service.items():
         print("where: k:{}, v:{}".format(k, v))
@@ -212,7 +190,6 @@ def dispatch_from(service):
 def dispatch_time(service):
     for k, v in service.items():
         print("time: k:{}, v:{}".format(k, v))
-
 
 
 def chain_topics(services):
@@ -227,20 +204,20 @@ def chain_topics(services):
     return []
 
 
-def dispath_service(services):
-    print("services to dispatch:{}".format(services))
+def dispath_service(services,session, phrase):
+    print("services to dispatch {} with session {}, phrase {}".format(services, session, phrase))
 
     for service in json.loads(services):
         #print("service:{}".format( service))
-        topics = chain_topics(services)
         for key, value in service.items():
-            #print("service ---- {}: {}".format(key, value))
+            print("***service {}: {}".format(key, value))
+            """
             if key == "select":
                 dispatch_select(service)
 
             elif key == "to":
-                dispatch_to(service)  
-            """
+                dispatch_to(service)
+            
             elif key == "from":
                 dispatch_from(service)  
             
@@ -256,8 +233,7 @@ def dispath_service(services):
             elif key == "where":
                 dispatch_where(service)
             """
-        
-            
+
             #print("value: {}".format())
 
     #print( "type:",type(services))
@@ -290,7 +266,13 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         request_path = self.path
         # print("request_path:",urllib.parse.unquote(request_path))
         payload = url_parse.unquote(request_path)
-        payload = payload[5:-1]
+
+        for p in payload.split("&"):
+            if "q=" in p:
+                payload = p[5:-1]
+            elif "field=" in p:
+                session = p
+                print("session: {}".format(session))
 
         # remove /?q=" at the begin and " at the end
         print('request params:', payload)
@@ -359,21 +341,24 @@ async def myfun1():
 
 if __name__ == "__main__":
 
-    phrase = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
-    sql_in_json = json.dumps(ransql_parse(phrase))
-    dispath_service(sql_in_json)
-
-    phrase = "SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, locathost, 5000);"
-    sql_in_json = json.dumps(ransql_parse(phrase))
-    dispath_service(sql_in_json)
+    statements=[]
 
     phrase = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
-    sql_in_json = json.dumps(ransql_parse(phrase))
-    dispath_service(sql_in_json)
+    phrase += "| SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, locathost, 5000);"
+    statements.append(phrase)
 
-    phrase = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);"
-    sql_in_json = json.dumps(ransql_parse(phrase))
-    dispath_service(sql_in_json)
+    phrase = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
+    phrase += "| SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);"
+    statements.append(phrase)
+   
+
+    for textfield in range(0, 2):
+        phrase_counter=0
+        for phrase in statements[textfield].split("|"):
+            sql_in_json = json.dumps(ransql_parse(phrase))
+
+            dispath_service(sql_in_json, textfield, phrase_counter)
+            phrase_counter+=1
 
     """
     t_http_server = threading.Thread(target=run_http_server)
