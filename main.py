@@ -14,9 +14,19 @@ import threading
 import subprocess
 
 #import re
+MAX_OPERATOR_PRIORITY = 10
+topics = [{
+    'name': '',
+    'operator': '',
+    'conf': {},
+    'producer': '',
+    'zookeeper': '127.0.0.1:2181'
+}]
+
 input_topics = []
 output_topics = []
 sessions = []
+
 operators = {
     'filter': {'value': 'where', 'priority': 0, 'app': 'FlinkFilter.java'},
     'obj': {'value': 'obj', 'priority': 1, 'app': ''},
@@ -27,12 +37,12 @@ operators = {
 
 
 flink_services = []
-sessions=[]
+sessions = []
 
 
 class Flink():
     def __init__(self):
-        self.path='/home/user/app'
+        self.path = '/home/user/app'
         self.log4j2 = '-Dlog4j.configurationFile="./conf/log4j2.xml"'
 
         self.session = {  # for kafka group.id
@@ -45,88 +55,100 @@ class Flink():
         self.output_topic = ''
         self.brokers = ''
         self.zookeeper = ''
-        self.group=''
+        self.group = ''
 
         """
         Note: Do not change the operators order, it counts
         """
         self.filter = {
-            'is_mapped':False,
-            'is_dipatched':False,
-            'in_type':'stream', #stream = simple_stream, basic type
-            'out_type':'stream',
+            'is_mapped': False,
+            'is_dipatched': False,
+            'in_type': 'stream',  # stream = simple_stream, basic type
+            'out_type': 'stream',
             'priority': 0,
-            'app':'FlinkFilter.java',
-            'conditions':[{'col':'','value':'','sign':''}],
+            'app': 'FlinkFilter.java',
+            'conditions': [{'col': '', 'value': '', 'sign': ''}],
             'from': '',
-            'to':{'type': '','to_conf': []}
+            'to': {'type': '', 'to_conf': []}
         }
 
         self.avg = {
-            'is_mapped':False,
-            'is_dipatched':False,
-            'in_type':'stream',
-            'out_type':'timed_stream',
+            'is_mapped': False,
+            'is_dipatched': False,
+            'in_type': 'stream',
+            'out_type': 'timed_stream',
             'priority': 1,
             'col': '',
             'from': '',
-            'time':{'unit':'','value':0},
-            'to':{'type': '','to_conf': []}
+            'time': {'unit': '', 'value': 0},
+            'to': {'type': '', 'to_conf': []}
         }
 
         self.add = {
-            'is_mapped':False,
-            'is_dipatched':False,
-            'in_type':'stream',
-            'out_type':'stream', #expand auto one more col as_col3, keep the remain cols
+            'is_mapped': False,
+            'is_dipatched': False,
+            'in_type': 'stream',
+            'out_type': 'stream',  # expand auto one more col as_col3, keep the remain cols
             'priority': 1,
             'col1': '',
             'col2': '',
             'as_col3': '',
             'from': '',
-            'to':{'type': '','to_conf': []}
+            'to': {'type': '', 'to_conf': []}
         }
 
         self.obj = {
-            'is_mapped':False,
-            'is_dipatched':False,
-            'in_type':'listed_stream',
-            'out_type':'stream', 
+            'is_mapped': False,
+            'is_dipatched': False,
+            'in_type': 'listed_stream',
+            'out_type': 'stream',
             'priority': 1,
             'col': '',
             'from': '',
-            'to':{'type': '','to_conf': []}
+            'to': {'type': '', 'to_conf': []}
         }
 
         self.sorter = {
-            'is_mapped':False,
-            'is_dipatched':False,
-            'in_type':'stream',
-            'out_type':'timed_stream', 
+            'is_mapped': False,
+            'is_dipatched': False,
+            'in_type': 'stream',
+            'out_type': 'timed_stream',
             'priority': 2,
             'col': '',
             'order': '',  # desc/asc
             'from': '',
-            'time':{'unit':'','value':0},
-            'to':{'type': '','to_conf': []}
+            'time': {'unit': '', 'value': 0},
+            'to': {'type': '', 'to_conf': []}
         }
 
-        self.limiter={
-            'is_mapped':False,
-            'is_dipatched':False,
-            'in_type':'stream',
-            'out_type':'headed_stream', #add two cols  "total" and "rest" as the heads
+        self.limiter = {
+            'is_mapped': False,
+            'is_dipatched': False,
+            'in_type': 'stream',
+            'out_type': 'headed_stream',  # add two cols  "total" and "rest" as the heads
             'priority': 3,
             'col': '',
-            'range': [], 
-            'total':0,
-            'rest':0,
+            'range': [],
+            'total': 0,
+            'rest': 0,
             'from': '',
-            'time':{'unit':'','value':0},
-            'to':{'type': '','conf': []}
+            'time': {'unit': '', 'value': 0},
+            'to': {'type': '', 'conf': []}
+        }
+
+        self.app = {
+            'is_mapped': False,
+            'is_dipatched': False,
+            'in_type': 'stream',
+            'out_type': 'stream',  # add two cols  "total" and "rest" as the heads
+            'priority': 4,
+            'conf':[],
+            'from': '',
+            'time': {'unit': '', 'value': 0},
+            'to': {'type': '', 'conf': []}
         }
         self.from_source = ''
-        self.to_sink={'type': '','value':'','conf': []}
+        self.to_sink = {'type': '', 'value': '', 'conf': []}
 
 
 def exe_cmd(cmd):
@@ -265,18 +287,6 @@ def dispatch_time(service):
         print("time: k:{}, v:{}".format(k, v))
 
 
-def chain_topics(services):
-    """
-    (pre*)  counter how many services: oai -> oai-1, oai-1 -> oai-2 etc., oai-final
-    (0) [+1 topic]: from + operatoin(obj + time, avg, add) -> for source kafka topic
-    (1) [+1 topic]: where -> filter 
-    (2) [+1 topic]: orderby, time, desc/asc
-    (4) [+1 topic]: limit[1,10],
-    (5) [+1 topic]: to : app/table
-    """
-    return []
-
-
 def map_services(services, session, phrase, flink):
     global flink_services
     print("services to dispatch {} with session {}, phrase {}".format(
@@ -284,10 +294,9 @@ def map_services(services, session, phrase, flink):
 
     for service in json.loads(services):
         #print("service:{}".format( service))
-        
+
         for key, value in service.items():
-            
-            
+
             flink.session['id'] = session
             flink.session['phrase'] = phrase
 
@@ -296,61 +305,58 @@ def map_services(services, session, phrase, flink):
             if key == "select":
                 # dispatch_select(service)
                 for op, col in value['value'].items():
-                    
-                    if op == 'obj':                    
-                        flink.obj['is_mapped'] = True  
+
+                    if op == 'obj':
+                        flink.obj['is_mapped'] = True
                         flink.obj['col'] = col
-                    elif op == 'avg':                    
-                        flink.avg['is_mapped'] = True  
-                        flink.avg['col'] = col 
-                        
+                    elif op == 'avg':
+                        flink.avg['is_mapped'] = True
+                        flink.avg['col'] = col
+
                     elif op == 'add':
-                        flink.add['is_mapped'] = True  
+                        flink.add['is_mapped'] = True
                         flink.add['col1'] = col[0]
                         flink.add['col2'] = col[1]
                         flink.add['as_col3'] = value['name']
 
             elif key == "where":
                 # dispatch_from(service)
-                flink.filter['is_mapped'] = True  
+                flink.filter['is_mapped'] = True
                 flink.filter['conditions'] = []
                 for sign, col in value.items():
-                    condition = {'col':col[0],'value':col[1],'sign':sign}
+                    condition = {'col': col[0], 'value': col[1], 'sign': sign}
                     flink.filter['conditions'].append(condition)
-            
+
             elif key == "orderby":
                 # dispatch_orderby(service)
-                flink.sorter['is_mapped'] = True  
-                
+                flink.sorter['is_mapped'] = True
+
                 flink.sorter['col'] = value['value']
                 flink.sorter['order'] = value['sort']
 
             elif key == "limit":
-                flink.limiter['is_mapped'] = True  
+                flink.limiter['is_mapped'] = True
                 # dispatch_limit(service)
                 flink.limiter['range'] = value
 
-
-
             elif key == "time":
-                if flink.avg['is_mapped']:                
+                if flink.avg['is_mapped']:
                     for t_unit, t_value in value.items():
                         flink.avg['time']['unit'] = t_unit
                         flink.avg['time']['value'] = t_value
 
-                if flink.sorter['is_mapped']:                
+                if flink.sorter['is_mapped']:
                     for t_unit, t_value in value.items():
                         flink.sorter['time']['unit'] = t_unit
                         flink.sorter['time']['value'] = t_value
 
-                if flink.limiter['is_mapped']:                
+                if flink.limiter['is_mapped']:
                     for t_unit, t_value in value.items():
                         flink.limiter['time']['unit'] = t_unit
                         flink.limiter['time']['value'] = t_value
 
-
             elif key == "from":
-                flink.from_source =  value
+                flink.from_source = value
 
             elif key == "to":
                 # dispatch_to(service)
@@ -362,72 +368,97 @@ def map_services(services, session, phrase, flink):
                             flink.to_sink['value'] = 'websocket'
                     elif to_type == 'table':
                         flink.to_sink['value'] = to_conf
-                        
-                    
+
 
 def map_session_id():
     global sessions
     pass
 
+
 def chain_operators(flink):
-    operators= []
+    operators = []
+    for i in range(0, MAX_OPERATOR_PRIORITY):  # make sure the operator priority correct
 
-    if flink.filter['is_mapped'] :
-        operators.append('filter')
+        if flink.filter['is_mapped'] and flink.filter['priority'] == i:
+            operators.append('filter')
+            continue
 
-    if flink.avg['is_mapped'] :
-        operators.append('avg')
+        if flink.avg['is_mapped'] and flink.avg['priority'] == i:
+            operators.append('avg')
+            continue
 
-    if flink.obj['is_mapped']:
-        operators.append('obj')
-    
-    if flink.add['is_mapped'] :
-        operators.append('add')
-        
-    if flink.sorter['is_mapped']:
-        operators.append('sorter')
-    
-    if flink.limiter['is_mapped']:
-        operators.append('limiter')
+        if flink.obj['is_mapped'] and flink.obj['priority'] == i:
+            operators.append('obj')
+            continue
+
+        if flink.add['is_mapped'] and flink.add['priority'] == i:
+            operators.append('add')
+            continue
+
+        if flink.sorter['is_mapped'] and flink.sorter['priority'] == i:
+            operators.append('sorter')
+            continue
+
+        if flink.limiter['is_mapped'] and flink.limiter['priority'] == i:
+            operators.append('limiter')
+            continue
 
     return operators
 
-def chain_topics(flink):
-    topics= { 'from':'','to':''}
 
-    topics['from'] = flink.from_source
-    topics['to'] = flink.to_sink['value'] 
+def chain_topics(flink):
+    topics = []  # { 'from':'','to':''}
+    topics.append(flink.from_source)
+    topics.append(flink.to_sink['value'])
 
     return topics
 
+
 def dispatch_services(flinks_per_session):
-    
-    
+
     for flink in flinks_per_session:
+        topics = []
         print("count_mapped_services: {}".format(chain_operators(flink)))
-        print("chain_topics: {}".format(chain_topics(flink)))
-        """
-        phrase 0 - end
-        """
-        for priority in flinks_per_session: 
-            """
-            fliter -> avg, obj, ..
-            """
-            pass
-    
+
+        total_operators = len(chain_operators(flink))
+
+        # a statement, ie, a flink, has 2 topics for 'from' and 'to'
+        topics = chain_topics(flink)
+
+        max_middle_topics = len(chain_operators(flink)) + \
+            1 - len(chain_topics(flink))
+        # middle_topics =
+
+        #print("aux_topics: {}".format(aux_topics))
+
+        # for topic_index in range(0, middle_topics):
+        middle_topic_counter=0
+
+        for op in chain_operators(flink):
+            if middle_topic_counter < max_middle_topics:
+                if op == 'filter':
+                    topics.insert(-1, str(topics[-2] + "-" + op))
+                elif op == 'obj':
+                    topics.insert(-1, str(topics[-2] + "-" + op))
+                elif op == 'add':
+                    topics.insert(-1, str(topics[-2] + "-" + op))
+                elif op == 'avg':
+                    topics.insert(-1, str(topics[-2] + "-" + op))
+                elif op == 'sorter':
+                    topics.insert(-1, str(topics[-2] + "-" + op))
+                elif op == 'limiter':
+                    topics.insert(-1, str(topics[-2] + "-" + op))
+
+            middle_topic_counter+=1
+
+        print("chained topics: {}".format(topics))
+
     for f in flinks_per_session:
         #print( "service count:{}, flink_services: {}".format(len(flinks_per_session),f.__dict__))
         pass
 
-
     return flinks_per_session
 
-
-            
-
-
-
-        
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_HEAD(self):
@@ -466,7 +497,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         else:
             try:
-                flinks=[]
+                flinks = []
                 phrase_counter = 0
                 for phrase in payload.split("|"):
                     flink = Flink()
@@ -525,37 +556,34 @@ async def myfun1():
 
 if __name__ == "__main__":
 
-    
     statements_sessions = []
-    #statement1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
-    #statement2 = "SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, locathost, 5000);"
-    
     statement1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
-    statement2 = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);"
-    
-    
+    statement2 = "SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, locathost, 5000);"
+
+    #statement1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
+    #statement2 = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);"
+
     statements = statement1 + "|" + statement2
     statements_sessions.append(statements)
 
     session_counter = 0
-    flinks_per_session=[]
+    flinks_per_session = []
     for statements in statements_sessions:
-        
+
         statement_counter = 0
         session_counter += 1
         for statement in statements.split("|"):
-            #a statement map to a flink app
-            #a session can owns multiple flinks app/statements
+            # a statement map to a flink app
+            # a session can owns multiple flinks app/statements
             flink = Flink()
             sql_in_json = json.dumps(ransql_parse(statement))
 
-            map_services(sql_in_json, session_counter, statement_counter, flink)
+            map_services(sql_in_json, session_counter,
+                         statement_counter, flink)
             statement_counter += 1
             flinks_per_session.append(flink)
 
     dispatch_services(flinks_per_session)
-
-
 
     """
     t_http_server = threading.Thread(target=run_http_server)
@@ -572,6 +600,3 @@ if __name__ == "__main__":
 
     asyncio.get_event_loop().run_forever()
     """
-
-
-    
