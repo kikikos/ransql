@@ -270,7 +270,7 @@ def chain_topics(services):
     return []
 
 
-def dispath_service(services, session, phrase, flink):
+def map_services(services, session, phrase, flink):
     global flink_services
     print("services to dispatch {} with session {}, phrase {}".format(
         services, session, phrase))
@@ -392,14 +392,23 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         else:
             try:
-
+                flinks=[]
+                phrase_counter = 0
                 for phrase in payload.split("|"):
-                    print("phrase:", phrase)
+                    flink = Flink()
+                    #print("phrase:", phrase)
 
                     sql_in_json = json.dumps(ransql_parse(phrase))
 
-                    dispath_service(sql_in_json)
+                    map_services(sql_in_json, session, phrase_counter, flink)
+                    phrase_counter += 1
+                    flinks.append(flink)
+
                 content = self._handle_http(200, "parse_ok")
+
+                for f in flinks:        
+                    print( "service count:{}, flink_services: {}".format(len(flinks),f.__dict__))
+
 
                 self.wfile.write(content)
 
@@ -445,7 +454,7 @@ async def myfun1():
 if __name__ == "__main__":
 
     statements = []
-
+    
     phrase = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
     phrase += "| SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, locathost, 5000);"
     statements.append(phrase)
@@ -454,7 +463,7 @@ if __name__ == "__main__":
     phrase += "| SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);"
     statements.append(phrase)
     
-    
+    flinks=[]
     for textfield in range(0, 2):
         
         phrase_counter = 0
@@ -462,12 +471,12 @@ if __name__ == "__main__":
             flink = Flink()
             sql_in_json = json.dumps(ransql_parse(phrase))
 
-            dispath_service(sql_in_json, textfield, phrase_counter, flink)
+            map_services(sql_in_json, textfield, phrase_counter, flink)
             phrase_counter += 1
-            flink_services.append(flink)
+            flinks.append(flink)
 
-    for f in flink_services:
-      print( "service count:{}, flink_services: {}".format(len(flink_services),f.__dict__))
+    for f in flinks:
+        print( "service count:{}, flink_services: {}".format(len(flinks),f.__dict__))
 
 
     """
@@ -485,3 +494,6 @@ if __name__ == "__main__":
 
     asyncio.get_event_loop().run_forever()
     """
+
+
+    
