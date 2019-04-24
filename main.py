@@ -15,13 +15,8 @@ import subprocess
 
 #import re
 MAX_OPERATOR_PRIORITY = 10
-topics = [{
-    'name': '',
-    'operator': '',
-    'conf': {},
-    'producer': '',
-    'zookeeper': '127.0.0.1:2181'
-}]
+
+all_topics=[]
 
 input_topics = []
 output_topics = []
@@ -39,8 +34,16 @@ operators = {
 flink_services = []
 sessions = []
 
+class Topic():
+    def __init__(self):
+         self.in_topic="" 
+         self.out_topic=""
+         self.operator=""
+         self.conf= {}    
+         self.zookeeper= "127.0.0.1:2181"
 
-class Flink():
+
+class Flink(): # a Flink represents a statement, which can contains multiple flink apps
     def __init__(self):
         self.path = '/home/user/app'
         self.log4j2 = '-Dlog4j.configurationFile="./conf/log4j2.xml"'
@@ -49,10 +52,13 @@ class Flink():
             'ip_port': '',
             'submit_button': '',
             'id': 0,
-            'phrase': 0
+            'statement': 0 #depriciated
         }
         self.input_topic = ''
+        self.input_topic_conf={}
         self.output_topic = ''
+        self.output_topic_type=''
+        self.output_topic_conf={}
         self.brokers = ''
         self.zookeeper = ''
         self.group = ''
@@ -62,68 +68,68 @@ class Flink():
         """
         self.filter = {
             'is_mapped': False,
-            'is_dipatched': False,
+            'is_conf_complete': False,
             'in_type': 'stream',  # stream = simple_stream, basic type
             'out_type': 'stream',
             'priority': 0,
             'app': 'FlinkFilter.java',
             'conditions': [{'col': '', 'value': '', 'sign': ''}],
-            'from': '',
-            'to': {'type': '', 'to_conf': []}
+            'in_topic': '',
+            'out_topic': {'value':'','type': '', 'conf': []}
         }
 
         self.avg = {
             'is_mapped': False,
-            'is_dipatched': False,
+            'is_conf_complete': False,
             'in_type': 'stream',
             'out_type': 'timed_stream',
             'priority': 1,
             'col': '',
-            'from': '',
             'time': {'unit': '', 'value': 0},
-            'to': {'type': '', 'to_conf': []}
+            'in_topic': '',
+            'out_topic': {'value':'','type': '', 'conf': []}
         }
 
         self.add = {
             'is_mapped': False,
-            'is_dipatched': False,
+            'is_conf_complete': False,
             'in_type': 'stream',
             'out_type': 'stream',  # expand auto one more col as_col3, keep the remain cols
             'priority': 1,
             'col1': '',
             'col2': '',
             'as_col3': '',
-            'from': '',
-            'to': {'type': '', 'to_conf': []}
+            'in_topic': '',
+            'out_topic': {'value':'','type': '', 'conf': []}
         }
 
         self.obj = {
             'is_mapped': False,
-            'is_dipatched': False,
+            'is_conf_complete': False,
             'in_type': 'listed_stream',
             'out_type': 'stream',
             'priority': 1,
             'col': '',
-            'from': '',
-            'to': {'type': '', 'to_conf': []}
+            'in_topic': '',
+            'out_topic': {'value':'','type': '', 'conf': []}
         }
 
         self.sorter = {
             'is_mapped': False,
-            'is_dipatched': False,
+            'is_conf_complete': False,
             'in_type': 'stream',
             'out_type': 'timed_stream',
             'priority': 2,
             'col': '',
             'order': '',  # desc/asc
-            'from': '',
             'time': {'unit': '', 'value': 0},
-            'to': {'type': '', 'to_conf': []}
+            'in_topic': '',
+            'out_topic': {'value':'','type': '', 'conf': []}
         }
 
         self.limiter = {
             'is_mapped': False,
-            'is_dipatched': False,
+            'is_conf_complete': False,
             'in_type': 'stream',
             'out_type': 'headed_stream',  # add two cols  "total" and "rest" as the heads
             'priority': 3,
@@ -131,24 +137,22 @@ class Flink():
             'range': [],
             'total': 0,
             'rest': 0,
-            'from': '',
             'time': {'unit': '', 'value': 0},
-            'to': {'type': '', 'conf': []}
+            'in_topic': '',
+            'out_topic': {'value':'','type': '', 'conf': []}
+
         }
 
         self.app = {
             'is_mapped': False,
-            'is_dipatched': False,
+            'is_conf_complete': False,
             'in_type': 'stream',
-            'out_type': 'stream',  # add two cols  "total" and "rest" as the heads
+            'out_type': 'app',  # add two cols  "total" and "rest" as the heads
             'priority': 4,
             'conf':[],
-            'from': '',
-            'time': {'unit': '', 'value': 0},
-            'to': {'type': '', 'conf': []}
+            'in_topic': '',
+            'out_topic': {'value':'','type': '', 'conf': []}
         }
-        self.from_source = ''
-        self.to_sink = {'type': '', 'value': '', 'conf': []}
 
 
 def exe_cmd(cmd):
@@ -160,34 +164,7 @@ def exe_cmd(cmd):
         print("exe_cmd error:", e)
 
 
-def get_dispatcher():
 
-    return {
-        'log4j2': '-Dlog4j.configurationFile="./conf/log4j2.xml"',
-        'operator': '',
-        'cols': [],
-        'col_alias': '',
-        'order_col': '',
-        'sort': '',  # desc/asc
-        'limit': [],
-        'from': '',
-        'filter': False,
-        'sign': '',
-        't_unit': '',
-        't_value': 0,
-        'to_type': '',
-        'to_conf': []
-    }
-
-
-def chain_services():
-    """
-    (1) where -> filter: *required: from and to
-    (2) operator -> avg, obj, add: *required: from and to
-    (3) orderby/limit/asc -> sorter: *required: from and to
-    """
-
-    pass
 
 
 def dispatch_select(service):
@@ -287,10 +264,10 @@ def dispatch_time(service):
         print("time: k:{}, v:{}".format(k, v))
 
 
-def map_services(services, session, phrase, flink):
+def map_services(services, session, statement, flink):
     global flink_services
-    print("services to dispatch {} with session {}, phrase {}".format(
-        services, session, phrase))
+    print("services to dispatch {} with session {}, statement {}".format(
+        services, session, statement))
 
     for service in json.loads(services):
         #print("service:{}".format( service))
@@ -298,7 +275,7 @@ def map_services(services, session, phrase, flink):
         for key, value in service.items():
 
             flink.session['id'] = session
-            flink.session['phrase'] = phrase
+            flink.session['statement'] = statement
 
             #print("***service key: {} and value: {}".format(key, value))
 
@@ -356,18 +333,22 @@ def map_services(services, session, phrase, flink):
                         flink.limiter['time']['value'] = t_value
 
             elif key == "from":
-                flink.from_source = value
+                flink.input_topic = value
 
             elif key == "to":
                 # dispatch_to(service)
                 for to_type, to_conf in value.items():
-                    flink.to_sink['type'] = to_type
-                    flink.to_sink['conf'] = to_conf
+                    flink.output_topic_type = to_type
+                    flink.output_topic_conf = to_conf
                     if to_type == 'app':
+                        flink.app['is_mapped'] = True
+                        flink.app['conf'] = to_conf
+
+
                         if to_conf[0] == 'websocket':
-                            flink.to_sink['value'] = 'websocket'
+                            flink.output_topic = 'websocket'
                     elif to_type == 'table':
-                        flink.to_sink['value'] = to_conf
+                        flink.output_topic = to_conf
 
 
 def map_session_id():
@@ -403,18 +384,31 @@ def chain_operators(flink):
             operators.append('limiter')
             continue
 
+        if flink.app['is_mapped'] and flink.app['priority'] == i:
+            operators.append('app')
+            continue
+
+
     return operators
 
 
 def chain_topics(flink):
     topics = []  # { 'from':'','to':''}
-    topics.append(flink.from_source)
-    topics.append(flink.to_sink['value'])
+    topics.append(flink.input_topic)
+    topics.append(flink.output_topic)
 
     return topics
 
+def is_topic_existed(topic):
+    global all_topics
+    for t in all_topics:
+        if t.in_topic == topic.in_topic and t.out_topic == topic.out_topic and t.operator == topic.operator and t.conf == topic.conf and t.zookeeper ==  topic.zookeeper:
+            return True
 
-def dispatch_services(flinks_per_session):
+
+def config_services(flinks_per_session):
+    global all_topics
+    topic=Topic()
 
     for flink in flinks_per_session:
         topics = []
@@ -427,34 +421,137 @@ def dispatch_services(flinks_per_session):
 
         max_middle_topics = len(chain_operators(flink)) + \
             1 - len(chain_topics(flink))
-        # middle_topics =
 
-        #print("aux_topics: {}".format(aux_topics))
 
-        # for topic_index in range(0, middle_topics):
+        #general case
         middle_topic_counter=0
-
         for op in chain_operators(flink):
-            if middle_topic_counter < max_middle_topics:
-                if op == 'filter':
-                    topics.insert(-1, str(topics[-2] + "-" + op))
+            if middle_topic_counter < max_middle_topics or max_middle_topics == 0:
+                
+                if op == 'filter':    
+                    topic.in_topic = topics[-2]
+                    #TODO: how to define a new topic?
+                    topic.out_topic = str(topics[-2] + "-" + op)
+                    topic.operator = op
+                    #TODO: how to pass conf?
+
+                    topics.insert(-1,topic.out_topic)
+                    #print("topic:{} ".format(topic.__dict__))
+                    
+                    flink.filter['in_topic'] = topic.in_topic 
+                    flink.filter['out_topic']['value'] = topic.out_topic
+
+                    flink.filter['is_conf_complete'] = True
+
+
+                    if not is_topic_existed(topic):
+                        all_topics.append(topic)
+
                 elif op == 'obj':
-                    topics.insert(-1, str(topics[-2] + "-" + op))
+                    topic.in_topic = topics[-2]
+                    #TODO: how to define a new topic?
+                    topic.out_topic = str(topics[-2] + "-" + op)
+                    topic.operator = op
+                    #TODO: how to pass conf?
+
+                    topics.insert(-1,topic.out_topic)
+                    #print("topic:{} ".format(topic.__dict__))
+                    flink.obj['in_topic'] = topic.in_topic 
+                    flink.obj['out_topic']['value'] = topic.out_topic
+
+                    flink.obj['is_conf_complete'] = True
+                    
+                    if not is_topic_existed(topic):
+                        all_topics.append(topic)
+                
                 elif op == 'add':
-                    topics.insert(-1, str(topics[-2] + "-" + op))
+                    topic.in_topic = topics[-2]
+                    #TODO: how to define a new topic?
+                    topic.out_topic = str(topics[-2] + "-" + op)
+                    topic.operator = op
+                    #TODO: how to pass conf?
+
+                    topics.insert(-1,topic.out_topic)
+                    flink.add['in_topic'] = topic.in_topic 
+                    flink.add['out_topic']['value'] = topic.out_topic
+
+                    flink.add['is_conf_complete'] = True
+                    
+                    if not is_topic_existed(topic):
+                        all_topics.append(topic)                
+                        
                 elif op == 'avg':
-                    topics.insert(-1, str(topics[-2] + "-" + op))
+                    topic.in_topic = topics[-2]
+                    #TODO: how to define a new topic?
+                    topic.out_topic = str(topics[-2] + "-" + op)
+                    topic.operator = op
+                    #TODO: how to pass conf?
+
+                    topics.insert(-1,topic.out_topic)
+
+                    flink.avg['in_topic'] = topic.in_topic 
+                    flink.avg['out_topic']['value'] = topic.out_topic
+
+                    flink.avg['is_conf_complete'] = True
+                    
+                    if not is_topic_existed(topic):
+                        all_topics.append(topic)
+
                 elif op == 'sorter':
-                    topics.insert(-1, str(topics[-2] + "-" + op))
+                    topic.in_topic = topics[-2]
+                    #TODO: how to define a new topic?
+                    topic.out_topic = str(topics[-2] + "-" + op)
+                    topic.operator = op
+                    #TODO: how to pass conf?
+
+                    topics.insert(-1,topic.out_topic)
+                    
+                    flink.sortre['in_topic'] = topic.in_topic 
+                    flink.sorter['out_topic']['value'] = topic.out_topic
+
+                    flink.sorter['is_conf_complete'] = True
+                    
+                    if not is_topic_existed(topic):
+                        all_topics.append(topic)
+
                 elif op == 'limiter':
-                    topics.insert(-1, str(topics[-2] + "-" + op))
+                    topic.in_topic = topics[-2]
+                    #TODO: how to define a new topic?
+                    topic.out_topic = str(topics[-2] + "-" + op)
+                    topic.operator = op
+                    #TODO: how to pass conf?
+
+                    topics.insert(-1,topic.out_topic)
+
+                    flink.limiter['in_topic'] = topic.in_topic 
+                    flink.limiter['out_topic']['value'] = topic.out_topic
+
+                    flink.limiter['is_conf_complete'] = True
+                    
+                    if not is_topic_existed(topic):
+                        all_topics.append(topic)
+        
+        #only last operator case
+        for op in chain_operators(flink):
+            if op == 'app' :
+                    print("configuring app*****")
+                    topic.in_topic = topics[-2]
+                    topic.out_topic = topics[-1]
+                    #topic.operator = op
+                    #TODO: how to pass conf?
+
+                    flink.app['in_topic'] = topic.in_topic 
+                    flink.app['out_topic']['value'] = topic.out_topic
+
+                    flink.app['is_conf_complete'] = True                    
+                
 
             middle_topic_counter+=1
 
         print("chained topics: {}".format(topics))
 
     for f in flinks_per_session:
-        #print( "service count:{}, flink_services: {}".format(len(flinks_per_session),f.__dict__))
+        print( "service count:{}, flink_services: {}".format(len(flinks_per_session),f.__dict__))
         pass
 
     return flinks_per_session
@@ -498,20 +595,20 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         else:
             try:
                 flinks = []
-                phrase_counter = 0
-                for phrase in payload.split("|"):
+                statement_counter = 0
+                for statement in payload.split("|"):
                     flink = Flink()
-                    #print("phrase:", phrase)
+                    #print("statement:", statement)
 
-                    sql_in_json = json.dumps(ransql_parse(phrase))
+                    sql_in_json = json.dumps(ransql_parse(statement))
 
-                    map_services(sql_in_json, session, phrase_counter, flink)
-                    phrase_counter += 1
+                    map_services(sql_in_json, session, statement_counter, flink)
+                    statement_counter += 1
                     flinks.append(flink)
 
                 content = self._handle_http(200, "parse_ok")
 
-                dispatch_services(flinks)
+                config_services(flinks)
 
                 self.wfile.write(content)
 
@@ -583,7 +680,7 @@ if __name__ == "__main__":
             statement_counter += 1
             flinks_per_session.append(flink)
 
-    dispatch_services(flinks_per_session)
+    config_services(flinks_per_session)
 
     """
     t_http_server = threading.Thread(target=run_http_server)
