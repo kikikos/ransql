@@ -406,7 +406,7 @@ def is_topic_existed(topic):
             return True
 
 
-def config_services(flinks_per_session):
+def config_topics(flinks_per_session):
     global all_topics
     topic=Topic()
 
@@ -506,7 +506,7 @@ def config_services(flinks_per_session):
 
                     topics.insert(-1,topic.out_topic)
                     
-                    flink.sortre['in_topic'] = topic.in_topic 
+                    flink.sorter['in_topic'] = topic.in_topic 
                     flink.sorter['out_topic']['value'] = topic.out_topic
 
                     flink.sorter['is_conf_complete'] = True
@@ -542,19 +542,41 @@ def config_services(flinks_per_session):
 
                     flink.app['in_topic'] = topic.in_topic 
                     flink.app['out_topic']['value'] = topic.out_topic
+                    flink.app['out_topic']['conf'] = flink.output_topic_conf
+                    flink.app['out_topic']['type'] = flink.output_topic_type
 
                     flink.app['is_conf_complete'] = True                    
                 
 
             middle_topic_counter+=1
 
-        print("chained topics: {}".format(topics))
-
+        #print("chained topics: {}".format(topics))
+    """
     for f in flinks_per_session:
         print( "service count:{}, flink_services: {}".format(len(flinks_per_session),f.__dict__))
-        pass
+    """
 
     return flinks_per_session
+
+
+def dispatch_services(flinks_per_session):
+    
+    for flink in flinks_per_session:
+        if flink.filter['is_conf_complete']:
+            print("filter ready to dispatch")
+        if flink.avg['is_conf_complete']:
+            print("avg ready to dispatch")
+        if flink.add['is_conf_complete']:
+            print("add ready to dispatch")
+        if flink.obj['is_conf_complete']:
+            print("obj ready to dispatch")
+        if flink.sorter['is_conf_complete']:
+            print("sorter ready to dispatch")
+        if flink.limiter['is_conf_complete']:
+            print("limiter ready to dispatch")
+        if flink.app['is_conf_complete']:
+            print("app ready to dispatch")
+
 
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -594,7 +616,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         else:
             try:
-                flinks = []
+                flinks_per_session = []
                 statement_counter = 0
                 for statement in payload.split("|"):
                     flink = Flink()
@@ -604,12 +626,12 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
                     map_services(sql_in_json, session, statement_counter, flink)
                     statement_counter += 1
-                    flinks.append(flink)
+                    flinks_per_session.append(flink)
+                
+                flinks_per_session = config_topics(flinks_per_session)
+                dispatch_services(flinks_per_session)
 
                 content = self._handle_http(200, "parse_ok")
-
-                config_services(flinks)
-
                 self.wfile.write(content)
 
             except Exception as e:
@@ -654,15 +676,15 @@ async def myfun1():
 if __name__ == "__main__":
 
     statements_sessions = []
-    statement1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
-    statement2 = "SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, locathost, 5000);"
-
     #statement1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
-    #statement2 = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);"
+    #statement2 = "SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, locathost, 5000);"
+
+    statement1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
+    statement2 = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);"
 
     statements = statement1 + "|" + statement2
     statements_sessions.append(statements)
-
+    """
     session_counter = 0
     flinks_per_session = []
     for statements in statements_sessions:
@@ -680,7 +702,11 @@ if __name__ == "__main__":
             statement_counter += 1
             flinks_per_session.append(flink)
 
-    config_services(flinks_per_session)
+    flinks_per_session = config_topics(flinks_per_session)
+    dispatch_services(flinks_per_session)
+
+
+
 
     """
     t_http_server = threading.Thread(target=run_http_server)
@@ -696,4 +722,4 @@ if __name__ == "__main__":
     # asyncio.get_event_loop().run_until_complete(asyncio.gather(*coroutines))
 
     asyncio.get_event_loop().run_forever()
-    """
+    
