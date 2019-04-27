@@ -12,6 +12,7 @@ import datetime
 import random
 import threading
 import subprocess
+import logging
 
 #import re
 MAX_OPERATOR_PRIORITY = 10
@@ -691,13 +692,14 @@ async def myfun1():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(    format='%(asctime)s.%(msecs)s:%(name)s:%(thread)d:%(levelname)s:%(process)d:%(message)s',level=logging.INFO)
     
     statements_sessions = []
     #statement1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
     #statement2 = "SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, 5000, col1, col2, col3);"
 
     statement1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
-    statement2 = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, 5000, col1, col2, col3);"
+    statement2 = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app('name'='websocket','cols'='*','class'='12345', 5000, col1, col2, col3);"
 
     statements = statement1 + "|" + statement2
     statements_sessions.append(statements)
