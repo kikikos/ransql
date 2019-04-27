@@ -37,9 +37,19 @@ sessions = []
 
 class Session():
     def __init__(self):
+        """
+        1 session - * statements
+        1 statement - * flinks 
+        """
         self.id=0
-        self.statement=[]
-        self.flinks = []
+        self.statements=[]
+        #self.flinks = []
+
+class Statement():
+    def __init__(self):
+        self.id=0
+        self.value=''
+        self.flinks=[] #Flinks()    
 
 class Topic():
     def __init__(self):
@@ -49,6 +59,10 @@ class Topic():
          self.conf= {}    
          self.zookeeper= "127.0.0.1:2181"
 
+class FlinkOperator():
+    def __init__(self):
+        pass
+        
 
 class Flink(): # a Flink represents a statement, which can contains multiple flink apps
     def __init__(self):
@@ -634,9 +648,13 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         else:
             try:
-                flinks_per_session = []
+                session = Session()
+                
+                #flinks_per_session = []
                 statement_counter = 0
                 for statement in payload.split("|"):
+                    session.statements=[]
+                    
                     flink = Flink()
                     #print("statement:", statement)
 
@@ -644,7 +662,8 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
                     map_services(sql_in_json, session, statement_counter, flink)
                     statement_counter += 1
-                    flinks_per_session.append(flink)
+                    
+                    #session.statements.append(flinks)
                 
                 flinks_per_session = config_topics(flinks_per_session)
                 dispatch_services(flinks_per_session)
@@ -693,7 +712,8 @@ async def myfun1():
 
 if __name__ == "__main__":
     logging.basicConfig(    format='%(asctime)s.%(msecs)s:%(name)s:%(thread)d:%(levelname)s:%(process)d:%(message)s',level=logging.INFO)
-    
+    sessions = []
+
     statements_sessions = []
     #statement1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
     #statement2 = "SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, 5000, col1, col2, col3);"
@@ -707,6 +727,8 @@ if __name__ == "__main__":
     session_counter = 0
     flinks_per_session = []
     for statements in statements_sessions:
+        session = Session()
+
 
         statement_counter = 0
         session_counter += 1
