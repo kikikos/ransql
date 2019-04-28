@@ -254,15 +254,26 @@ class Statement():
                                         for ws_conf in flink.conf:
                                             ws_key=ws_conf["eq"]["literal"][0]
                                             ws_value=ws_conf["eq"]["literal"][1]
-                                            print("key :{} and val :{}".format(ws_key,ws_value))
+                                            
                                             if ws_key =="html":
-                                                self.html = ws_value
+                                                #print("****ws_key html :{} and val :{}".format(ws_key,ws_value))
+                                                ws.html = ws_value
+                                            
                                             if ws_key =="cols":
-                                                self.cols = ws_value
+                                                #print("****ws_key cols :{} and val :{}".format(ws_key,ws_value))
+                                                
+                                                if ws_value =="*":
+                                                    ws.cols =="\*"
+                                                else:
+                                                    ws.cols = ws_value
+
+
                                             if ws_key == "class" or ws_key =="css_class":
-                                                self.css_class = ws_value
+                                                #print("****ws_key class :{} and val :{}".format(ws_key,ws_value))
+                                                ws.css_class = ws_value
+                                            
                                             if ws_key =="port":
-                                                self.port = ws_value
+                                                ws.port = ws_value
 
 
                                         flinks.append(ws)
@@ -462,7 +473,7 @@ class WebsocketConnector(AppConnector):
         self.operation=Flink.STREAM_OPERATIONS['app']
         self.name = "websocket"
         self.html ="table"
-        self.cols ="*"
+        self.cols ="\*"
         self.css_class=""
         self.port = "50000"
 
