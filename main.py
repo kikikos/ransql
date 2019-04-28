@@ -113,10 +113,14 @@ class Statement():
         exe_cmd(cmd)
 
     def dispatch_app(self,app):
-        logging.debug("disp app %s", app)
-        cmd = 'xterm  -T "app" -hold  -e ' 
-        cmd += self.config_basic_dispatcher(app) +  " --conf " + str(app.conf) + " &"
-        logging.debug('app -- %s', cmd)
+        if isinstance(app, WebsocketConnector):
+            self.dispatch_ws(app)
+    
+    def dispatch_ws(self, ws):
+        logging.debug("disp ws %s", ws)
+        cmd = 'xterm  -T "ws" -hold  -e ' 
+        cmd += self.config_basic_dispatcher(ws) +  " --html " + ws.html +  " --cols " + ws.cols +  " --class " + ws.css_class +  " --port " + ws.port + " &"
+        logging.debug('ws -- %s', cmd)
         exe_cmd(cmd)
 
     def prioritize_flinks(self, flinks):
