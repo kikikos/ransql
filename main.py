@@ -81,7 +81,7 @@ class Statement():
         
     def dispatch_filter(self,filter):
         logging.debug("disp filer %s", filter.thread_num)
-        cmd = 'xterm  -T "filter" -e ' 
+        cmd = 'xterm  -T "filter" -hold  -e ' 
         cmd += self.config_basic_dispatcher(filter) +  " --conditions " + str(filter.conditions) + " &"
         logging.debug('filter %s', cmd)
         exe_cmd(cmd)
@@ -298,8 +298,8 @@ class Flink():
         self.output_topic = {'id':0, 'value':'', 'type':'', 'conf':{}}
         self.thread_num = 1 
 
-        self.brokers = '1270.0.0.1:9092'
-        self.zookeeper = '1270.0.0.1:2181'
+        self.brokers = '127.0.0.1:9092'
+        self.zookeeper = '127.0.0.1:2181'
         self.group = 'oai'        
         
         self.operation=''
