@@ -80,37 +80,47 @@ class Statement():
         return config
         
     def dispatch_filter(self,filter):
-        logging.debug("disp filer %s", filter.thread_num)
+        logging.debug("disp filer %s", filter)
         cmd = 'xterm  -T "filter" -hold  -e ' 
         cmd += self.config_basic_dispatcher(filter) +  " --conditions " + str(filter.conditions) + " &"
-        logging.debug('filter %s', cmd)
+        logging.debug('filter -- %s', cmd)
         exe_cmd(cmd)
 
     def dispatch_obj(self, obj):
-        """
-        cmd = "java -jar "+ \
-        filter['java_app_path'] +  "/target/" + filter['java_app'] +\
-        "-D" + filter['log4j2'] + \
-        " --input_topic " + filter['input_topic']['value'] +\
-        " --output_topic "+filter['output_topic']['value'] +\
-        " --col " + filter['col']
-        
+        logging.debug("disp obj %s", obj)
+        cmd = 'xterm  -T "obj" -hold  -e ' 
+        cmd += self.config_basic_dispatcher(obj) +  " --col " + obj.col + " &"
+        logging.debug('obj -- %s', cmd)
         exe_cmd(cmd)
-        """
-        pass
 
     def dispatch_avg(self, avg):
-        pass
+        logging.debug("disp avg %s", avg)
+        cmd = 'xterm  -T "avg" -hold  -e ' 
+        cmd += self.config_basic_dispatcher(avg) +  " --col " + avg.col + " --time.unit " + avg.time['unit'] + " --time.value " + str(avg.time['value'] )+" &"
+        logging.debug('avg -- %s', cmd)
+        exe_cmd(cmd)
+        
 
     def dispatch_add(self, add):
-        pass
+        logging.debug("disp add %s", add)
+        cmd = 'xterm  -T "add" -hold  -e ' 
+        cmd += self.config_basic_dispatcher(add) +  " --col1 " + add.col1 + " --col2 " + add.col2 + " --as_col3 " + add.as_col3  +" &"
+        logging.debug('add -- %s', cmd)
+        exe_cmd(cmd)
 
     def dispatch_sorter(self,sorter):
-        pass
+        logging.debug("disp sorter %s", sorter)
+        cmd = 'xterm  -T "sorter" -hold  -e ' 
+        cmd += self.config_basic_dispatcher(sorter) +  " --col " + sorter.col + " --time.unit " + sorter.time['unit'] + " --time.value " + str(sorter.time['value']) + " --order "+ sorter.order + " --limit.bottom " +  str(sorter.limit['bottom']) + " --limit.ceil " +str(sorter.limit['ceil'])+" &"
+        logging.debug('add -- %s', cmd)
+        exe_cmd(cmd)
 
     def dispatch_app(self,app):
-        pass
-
+        logging.debug("disp app %s", app)
+        cmd = 'xterm  -T "app" -hold  -e ' 
+        cmd += self.config_basic_dispatcher(app) +  " --conf " + str(app.conf) + " &"
+        logging.debug('app -- %s', cmd)
+        exe_cmd(cmd)
 
 
 
@@ -241,7 +251,7 @@ class Statement():
         operators = []
         for i in range(0, MAX_OPERATOR_PRIORITY):  
             for flink in flinks:
-                #print("****flink in chain ops:{}".format(flink ))
+                logging.debug("****flink in chain ops: %s", flink )
                 if flink.operation['priority'] == i:
                     operators.append(flink.operation['name'])
 
@@ -254,6 +264,8 @@ class Statement():
         chained_flinks=[]
         chain_operators=self.chain_operators(flinks)
         chain_topics = self.chain_topics(chain_operators, flinks)
+        logging.debug("****chain_operators: %s", chain_operators )
+        logging.debug("****chain_topics: %s", chain_topics )
 
         #print("chain operators: {}".format(chain_operators))
         #print("chain topics: {}, flinks types {}".format(chain_topics, type(flinks)))
@@ -283,11 +295,11 @@ class Statement():
 class Flink():
     STREAM_OPERATIONS={
         'filter':{'name':'filter', 'priority':0,'transformation':{'from':'STREAM','to':'STREAM'},'java_app':'FlinkFilter.jar'}, 
-        'obj':{'name':'obj', 'priority':1,'transformation':{'from':'STREAM','to':'STREAM'},'java_app':'FlinkFilter.jar'}, 
-        'avg':{'name':'avg', 'priority':1,'transformation':{'from':'STREAM','to':'ACC_STREAM'},'java_app':'FlinkAvg.jar'}, 
-        'add':{'name':'add', 'priority':1,'transformation':{'from':'STREAM','to':'STREAM'},'java_app':'FlinkAdder.jar'}, 
+        'obj':{'name':'obj', 'priority':1,'transformation':{'from':'STREAM','to':'STREAM'},'java_app':'FlinkListObjectizer.jar'}, 
+        'avg':{'name':'avg', 'priority':1,'transformation':{'from':'STREAM','to':'ACC_STREAM'},'java_app':'FlinkAccumulator.jar'}, 
+        'add':{'name':'add', 'priority':1,'transformation':{'from':'STREAM','to':'STREAM'},'java_app':'FlinkColAdder.jar'}, 
         'sorter':{'name':'sorter', 'priority':2,'transformation':{'from':'STREAM','to':'WINDOWSED_STREAM'},'java_app':'FlinkSorter.jar'}, 
-        'app':{'name':'app', 'priority':3,'transformation':{'from':'STREAM','to':'UNKNOWN'},'java_app':''}
+        'app':{'name':'app', 'priority':3,'transformation':{'from':'STREAM','to':'UNKNOWN'},'java_app':'WebsocketConnector.jar'}
         }
     
     def __init__(self):
@@ -383,10 +395,10 @@ class Topic():
 
 def exe_cmd(cmd):
     try:
-        print("shell: ", cmd)
+        logging.info("shell cmd: %s", cmd)
         subprocess.call(cmd, shell=True)
     except Exception as e:
-        print("exe_cmd error: {}".format(e))
+        logging.error("exe_cmd error: %s", str(e))
 
 
 def dispatch_(flink):
@@ -714,8 +726,8 @@ if __name__ == "__main__":
     stm1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
     stm2 = "SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, 5000, col1, col2, col3);"
 
-    #stm1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
-    #stm2 = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app('name'='websocket','cols'='*,col1,col2','class'='12345', 'port'= '5000');"
+    stm1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
+    stm2 = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app('name'='websocket','cols'='*,col1,col2','class'='12345', 'port'= '5000');"
 
     stms = stm1 + "|" + stm2
 
