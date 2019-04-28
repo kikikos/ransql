@@ -16,13 +16,10 @@ import logging
 
 #import re
 MAX_OPERATOR_PRIORITY = 10
-logging.basicConfig(format='%(asctime)s, line:%(lineno)d:%(levelname)s:%(message)s',level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s, line:%(lineno)d:%(levelname)s:%(message)s',level=logging.INFO)
 
 all_topics=[]
-#input_topics = []
-#output_topics = []
 sessions = []
-#flink_services = []
 
 
 class Session():
@@ -123,18 +120,41 @@ class Statement():
         exe_cmd(cmd)
 
     def prioritize_flinks(self, flinks):
-
         flinks.sort(key=lambda x: x.operation['priority'])
+        return flinks
+
+    def config_zookeeper(self, flinks):
+        #TODO: optimization, eg, cluster
+        for flink in flinks:
+            flink.zookeeper ="127.0.0.1:2181"
+        return flinks
+
+    def config_brokers(self, flinks):
+        #TODO: optimization, eg, cluster
+        for flink in flinks:
+            flink.brokers ="127.0.0.1:9092"
+        return flinks
+
+    def config_thread_nums(self, flinks):
+        #TODO: optimization
+        for flink in flinks:
+            flink.thread_num = 1
+        return flinks
+
+    def config_groups(self, flinks):
+        #TODO: config group
         return flinks
 
 
 
 
     def config_flinks(self):
-        #TODO: config brokers/zk
-        #TODO: config group
         
         flinks = self.map_flinks()
+        flinks = self.config_zookeeper(flinks)
+        flinks = self.config_brokers(flinks)        
+        flinks = self.config_thread_nums(flinks)
+        flinks = self.config_groups(flinks)
         flinks = self.prioritize_flinks(flinks)
         return self.chain_flinks(flinks)
     
@@ -330,7 +350,7 @@ class Flink():
         self.output_topic = {'id':0, 'value':'', 'type':'', 'conf':{}}
         self.thread_num = 1 
 
-        self.brokers = '127.0.0.1:9092'
+        self.brokers = ''
         self.zookeeper = '127.0.0.1:2181'
         self.group = 'oai'        
         
@@ -420,223 +440,6 @@ def exe_cmd(cmd):
     except Exception as e:
         logging.error("exe_cmd error: %s", str(e))
 
-
-def dispatch_(flink):
-    pass
-
-
-def map_session_id():
-    global sessions
-    pass
-
-
-def chain_operators(flinks):
-    operators = []
-    for i in range(0, MAX_OPERATOR_PRIORITY):  
-        for flink in flinks:
-            #print("****flink in chain ops:{}".format(flink ))
-            if flink.operation['priority'] == i:
-                operators.append(flink.operation['name'])
-
-    return operators
-
-
-def chain_topics(flinks, operators):
-    topics = []  
-    flink_num = len(flinks)
-    op_num = len(operators)
-    
-    counter =0
-    for flink in flinks:
-        for op in operators:
-            if counter < flink_num + 1 - op_num:
-                
-                topics.append(flink.input_topic['value'] + "-" + op)
-
-                counter +=1
-        
-    return topics
-
-def is_topic_existed(topic):
-    global all_topics
-    for t in all_topics:
-        if t.in_topic == topic.in_topic and t.out_topic == topic.out_topic and t.operator == topic.operator and t.conf == topic.conf and t.zookeeper ==  topic.zookeeper:
-            return True
-
-
-def config_topics(flinks):
-    global all_topics
-    topic=Topic()
-    flinks=[]
-    for flink in flinks:
-        topics = []
-        print("count_mapped_services: {}".format(chain_operators(flink)))
-
-        total_operators = len(chain_operators(flink))
-
-        # a statement, ie, a flink, has 2 topics for 'from' and 'to'
-        topics = chain_topics(flink)
-
-        max_middle_topics = len(chain_operators(flink)) + \
-            1 - len(chain_topics(flink))
-
-
-        #general case
-        middle_topic_counter=0
-        for op in chain_operators(flink):
-            if middle_topic_counter < max_middle_topics or max_middle_topics == 0:
-                
-                if op == 'filter':    
-                    topic.in_topic = topics[-2]
-                    #TODO: how to define a new topic?
-                    topic.out_topic = str(topics[-2] + "-" + op)
-                    topic.operator = op
-                    #TODO: how to pass conf?
-
-                    topics.insert(-1,topic.out_topic)
-                    #print("topic:{} ".format(topic.__dict__))
-                    
-                    flink.filter['in_topic'] = topic.in_topic 
-                    flink.filter['out_topic']['value'] = topic.out_topic
-
-                    flink.filter['is_conf_complete'] = True
-
-
-                    if not is_topic_existed(topic):
-                        all_topics.append(topic)
-
-                elif op == 'obj':
-                    topic.in_topic = topics[-2]
-                    #TODO: how to define a new topic?
-                    topic.out_topic = str(topics[-2] + "-" + op)
-                    topic.operator = op
-                    #TODO: how to pass conf?
-
-                    topics.insert(-1,topic.out_topic)
-                    #print("topic:{} ".format(topic.__dict__))
-                    flink.obj['in_topic'] = topic.in_topic 
-                    flink.obj['out_topic']['value'] = topic.out_topic
-
-                    flink.obj['is_conf_complete'] = True
-                    #print("****Done flink.obj['is_conf_complete']: {}".format(flink.obj['is_conf_complete']))
-                    
-                    if not is_topic_existed(topic):
-                        all_topics.append(topic)
-                
-                elif op == 'add':
-                    topic.in_topic = topics[-2]
-                    #TODO: how to define a new topic?
-                    topic.out_topic = str(topics[-2] + "-" + op)
-                    topic.operator = op
-                    #TODO: how to pass conf?
-
-                    topics.insert(-1,topic.out_topic)
-                    flink.add['in_topic'] = topic.in_topic 
-                    flink.add['out_topic']['value'] = topic.out_topic
-
-                    flink.add['is_conf_complete'] = True
-                    
-                    if not is_topic_existed(topic):
-                        all_topics.append(topic)                
-                        
-                elif op == 'avg':
-                    topic.in_topic = topics[-2]
-                    #TODO: how to define a new topic?
-                    topic.out_topic = str(topics[-2] + "-" + op)
-                    topic.operator = op
-                    #TODO: how to pass conf?
-
-                    topics.insert(-1,topic.out_topic)
-
-                    flink.avg['in_topic'] = topic.in_topic 
-                    flink.avg['out_topic']['value'] = topic.out_topic
-
-                    flink.avg['is_conf_complete'] = True
-                    
-                    if not is_topic_existed(topic):
-                        all_topics.append(topic)
-
-                elif op == 'sorter':
-                    topic.in_topic = topics[-2]
-                    #TODO: how to define a new topic?
-                    topic.out_topic = str(topics[-2] + "-" + op)
-                    topic.operator = op
-                    #TODO: how to pass conf?
-
-                    topics.insert(-1,topic.out_topic)
-                    
-                    flink.sorter['in_topic'] = topic.in_topic 
-                    flink.sorter['out_topic']['value'] = topic.out_topic
-
-                    flink.sorter['is_conf_complete'] = True
-                    
-                    if not is_topic_existed(topic):
-                        all_topics.append(topic)
-                """
-                elif op == 'limiter':
-                    topic.in_topic = topics[-2]
-                    #TODO: how to define a new topic?
-                    topic.out_topic = str(topics[-2] + "-" + op)
-                    topic.operator = op
-                    #TODO: how to pass conf?
-
-                    topics.insert(-1,topic.out_topic)
-
-                    flink.limiter['in_topic'] = topic.in_topic 
-                    flink.limiter['out_topic']['value'] = topic.out_topic
-
-                    flink.limiter['is_conf_complete'] = True
-                    
-                    if not is_topic_existed(topic):
-                        all_topics.append(topic)
-                """
-        
-        #only last operator case
-        for op in chain_operators(flink):
-            if op == 'app' :
-                    topic.in_topic = topics[-2]
-                    topic.out_topic = topics[-1]
-                    #topic.operator = op
-                    #TODO: how to pass conf?
-
-                    flink.app['in_topic'] = topic.in_topic 
-                    flink.app['out_topic']['value'] = topic.out_topic
-                    flink.app['out_topic']['conf'] = flink.output_topic_conf
-                    flink.app['out_topic']['type'] = flink.output_topic_type
-
-                    flink.app['is_conf_complete'] = True                    
-                
-
-            middle_topic_counter+=1
-        
-
-        flinks.append(flink)
-        print("chained topics: {}".format(topics))
-
-    return flinks#flinks_per_session
-
-
-def dispatch_services(flinks_per_session):
-    
-    for flink in flinks_per_session:
-        print("flink  to dispatch: {}".format(flink.__dict__))
-        if flink.filter['is_conf_complete']:
-            print("filter ready to dispatch")
-        if flink.avg['is_conf_complete']:
-            print("avg ready to dispatch")
-        if flink.add['is_conf_complete']:
-            print("add ready to dispatch")
-        if flink.obj['is_conf_complete']:
-            print("obj ready to dispatch")
-        if flink.sorter['is_conf_complete']:
-            print("sorter ready to dispatch")
-        """
-        if flink.limiter['is_conf_complete']:
-            print("limiter ready to dispatch")
-        """
-        if flink.app['is_conf_complete']:
-            print("app ready to dispatch")
-        
 
 
 
@@ -744,7 +547,7 @@ if __name__ == "__main__":
 
     
     stm1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
-    stm2 = "SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, 5000, col1, col2, col3);"
+    stm2 = "SELECT AVG(total_pdu_bytes_rx) TIME second(0.1) FROM ues WHERE m_id=0  TO app('name'='websocket','cols'='*,col1,col2','class'='12345', 'port'= '5000');"
 
     #stm1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
     #stm2 = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app('name'='websocket','cols'='*,col1,col2','class'='12345', 'port'= '5000');"
