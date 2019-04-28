@@ -122,6 +122,11 @@ class Statement():
         logging.debug('app -- %s', cmd)
         exe_cmd(cmd)
 
+    def prioritize_flinks(self, flinks):
+        #TODO: sort by priority of flinks operations
+
+        return flinks
+
 
 
 
@@ -129,6 +134,8 @@ class Statement():
         #TODO: config brokers/zk
         #TODO: config group
         flinks = self.map_flinks()
+        flinks = self.prioritize_flinks(flinks)
+
         return self.chain_flinks(flinks)
     
     def map_flinks(self):
@@ -244,6 +251,10 @@ class Statement():
                     topics[-1] = self.output_topic['value']
                 """
                 cnt +=1
+        
+        if len(topics) > 2:
+            logging.debug(topics)
+            #exit(0)
 
         return topics
 
@@ -251,9 +262,12 @@ class Statement():
         operators = []
         for i in range(0, MAX_OPERATOR_PRIORITY):  
             for flink in flinks:
-                logging.debug("****flink in chain ops: %s", flink )
+                #logging.debug("****flink in chain ops: %s", flink )
                 if flink.operation['priority'] == i:
                     operators.append(flink.operation['name'])
+        
+        logging.debug(operators)
+        
 
         return operators
 
@@ -279,6 +293,11 @@ class Statement():
             
 
                 chained_flinks.append(f_val)
+
+        if len(chained_flinks) > 2:
+            for f in chained_flinks:
+                logging.debug(f)
+            exit(0)        
 
         
         return chained_flinks
@@ -726,8 +745,8 @@ if __name__ == "__main__":
     stm1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
     stm2 = "SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, 5000, col1, col2, col3);"
 
-    stm1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
-    stm2 = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app('name'='websocket','cols'='*,col1,col2','class'='12345', 'port'= '5000');"
+    #stm1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
+    #stm2 = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app('name'='websocket','cols'='*,col1,col2','class'='12345', 'port'= '5000');"
 
     stms = stm1 + "|" + stm2
 
