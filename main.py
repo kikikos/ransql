@@ -27,16 +27,16 @@ class Session():
     1 session - * statements
     1 statement - * flinks 
     """
-    def __init__(self,value):
-        self.id=0
+    def __init__(self,value, id):
+        self.id=id
         self.value=value
-        self.statements= self.get_statements(self.value)
+        self.statements= self.get_statements(self.value, self.id)
         #self.flinks = []
 
-    def get_statements(self, value):
+    def get_statements(self, value, session_id):
         statements  =[]
         for stm_str in value.split("|"):
-            statements.append(Statement(stm_str))
+            statements.append(Statement(stm_str, session_id))
         return statements #Statement(self.value.split('|') )
 
     def print(self):
@@ -47,8 +47,8 @@ class Session():
 
             
 class Statement():
-    def __init__(self, value):
-        self.id=0
+    def __init__(self, value, session_id):
+        self.session_id=  session_id
         self.value = value
         self.input_topic={'id':0, 'value':'', 'type':'', 'conf':{}}
         self.output_topic={'id':0, 'value':'', 'type':'', 'conf':{}}
@@ -73,7 +73,7 @@ class Statement():
     
     def config_basic_dispatcher(self, flink):
         logging.debug('config basic dispatcher %s, type %s', flink, type(flink) )
-        config =  "java "+ " -Dlog4j.configurationFile=\"" + flink.java_app_path + flink.log4j2 + "\" -jar " + flink.java_app_path +  "/target/" + flink.operation['java_app'] +" --zookeeper.connect " + flink.zookeeper+ " --bootstrap.servers " + flink.brokers+  " --group.id " + flink.group+  " --input-topic " + flink.input_topic['value'] + " --output-topic "+flink.output_topic['value'] + " --thread.nums " + str(flink.thread_num )
+        config =  "java "+ " -Dlog4j.configurationFile=\"" + flink.java_app_path + flink.log4j2 + "\""+ " -Xmx256m "+ " -jar " + flink.java_app_path +  "/target/" + flink.operation['java_app'] +" --zookeeper.connect " + flink.zookeeper+ " --bootstrap.servers " + flink.brokers+  " --group.id " + flink.group+  " --input-topic " + flink.input_topic['value'] + " --output-topic "+flink.output_topic['value'] + " --thread.nums " + str(flink.thread_num )
         return config
         
     def dispatch_filter(self,filter):
@@ -142,7 +142,9 @@ class Statement():
         return flinks
 
     def config_groups(self, flinks):
-        #TODO: config group
+        #TODO: optimization
+        for flink in flinks:
+            flink.group = self.session_id
         return flinks
 
 
@@ -233,17 +235,44 @@ class Statement():
                         
                         #flink.output_topic_type = to_type
                         #flink.output_topic_conf = to_conf
-                        if to_type == 'app':
+                        if to_type == 'app':                           
                             flink.is_mapped = True
                             flink.conf = to_conf
-                            #TODO: temp, parser shoud be improved
+
+                            for app_conf in flink.conf:
+                                key=app_conf["eq"]["literal"][0]
+                                value=app_conf["eq"]["literal"][1]
+                                if key == "name":
+                                    if value == "websocket":
+                                        ws = WebsocketConnector()
+                                        ws.conf = to_conf
+                                        ws.name = value
+                                        for ws_conf in flink.conf:
+                                            ws_key=ws_conf["eq"]["literal"][0]
+                                            ws_value=ws_conf["eq"]["literal"][1]
+                                            print("key :{} and val :{}".format(ws_key,ws_value))
+                                            if ws_key =="html":
+                                                self.html = ws_value
+                                            if ws_key =="cols":
+                                                self.cols = ws_value
+                                            if ws_key == "class" or ws_key =="css_class":
+                                                self.css_class = ws_value
+                                            if ws_key =="port":
+                                                self.port = ws_value
+
+
+                                        flinks.append(ws)
+                                        logging.info("ws app: %s", ws)
+                            
                             self.output_topic['value'] = 'websocket'
+                            
 
-
+                            """
                             if to_conf[0] == 'websocket':
                                 self.output_topic['value'] = 'websocket'
+                            """
                             
-                            flinks.append(flink)
+                            
                         
                         elif to_type == 'table':
                             self.output_topic['value'] = to_conf
@@ -351,8 +380,8 @@ class Flink():
         self.thread_num = 1 
 
         self.brokers = ''
-        self.zookeeper = '127.0.0.1:2181'
-        self.group = 'oai'        
+        self.zookeeper = ''
+        self.group = ''        
         
         self.operation=''
         self.is_mapped =  False
@@ -423,6 +452,22 @@ class AppConnector(Flink):
     def __str__(self):
         return super().__str__()
 
+class WebsocketConnector(AppConnector):
+    def __init__(self):
+        AppConnector.__init__(self)
+        self.operation=Flink.STREAM_OPERATIONS['app']
+        self.name = "websocket"
+        self.html ="table"
+        self.cols ="*"
+        self.css_class=""
+        self.port = "50000"
+
+        #self.conf = {}
+
+
+    def __str__(self):
+        return super().__str__()
+
 class Topic():
     def __init__(self):
         self.id=0
@@ -454,19 +499,22 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        
         request_path = self.path
         # print("request_path:",urllib.parse.unquote(request_path))
         payload = url_parse.unquote(request_path)
+        sessionId=""
 
         for p in payload.split("&"):
             if "q=" in p:
                 payload = p[5:-1]
             elif "field=" in p:
-                session = p
-                print("session: {}".format(session))
+                sessionId = p[6:]
+                logging.info('session: %s', sessionId)
+                #print("session: {}".format(session))
 
         # remove /?q=" at the begin and " at the end
-        print('request params:', payload)
+        logging.info('request params: %s', payload)
 
         if payload == "cancel-usecase-1":
             # TODO
@@ -480,31 +528,21 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         else:
             try:
-                session = Session()
-                
-                #flinks_per_session = []
-                statement_counter = 0
-                for statement in payload.split("|"):
-                    session.statements=[]
-                    
-                    flink = Flink()
-                    #print("statement:", statement)
+                global sessions
+                session = Session(payload, sessionId)
 
-                    sql_in_json = json.dumps(ransql_parse(statement))
-
-                    map_services(sql_in_json, session, statement_counter, flink)
-                    statement_counter += 1
-                    
-                    #session.statements.append(flinks)
-                
-                flinks_per_session = config_topics(flinks_per_session)
-                dispatch_services(flinks_per_session)
+                for stm in session.statements:
+                    flinks = stm.flinks
+                    stm.dispatch_flinks(flinks)
 
                 content = self._handle_http(200, "parse_ok")
                 self.wfile.write(content)
 
+                sessions.append(session)
+
             except Exception as e:
-                print("parse error:", e)
+                logging.error("parser error: %s", str(e))
+                e.print()
                 content = self._handle_http(404, "parse_error")
                 self.wfile.write(content)
 
@@ -523,9 +561,9 @@ def run_http_server(port=8888):
 
 
 async def websocket_handler(websocket, path):
-    kafka_topic = "oai-final"
+    kafka_topic = "websocket"
     kafka_group = "oai"
-    kafka_brokers = "192.168.200.3:9092"
+    kafka_brokers = "127.0.0.1:9092"
 
     #consumer = KafkaConsumer(kafka_topic, auto_offset_reset='latest',enable_auto_commit=False, group_id=kafka_group, bootstrap_servers=[kafka_brokers])
 
@@ -543,9 +581,9 @@ async def myfun1():
 
 
 if __name__ == "__main__":
+    """
     sessions = []
 
-    
     stm1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
     stm2 = "SELECT AVG(total_pdu_bytes_rx) TIME second(0.1) FROM ues WHERE m_id=0  TO app('name'='websocket','cols'='*,col1,col2','class'='12345', 'port'= '5000');"
 
@@ -558,8 +596,6 @@ if __name__ == "__main__":
     #print("session statements: {}".format( session))
     #session.print()
 
-
-
     sessions.append(session)
     
     for sess in sessions:
@@ -569,35 +605,8 @@ if __name__ == "__main__":
             stm.dispatch_flinks(flinks)
             #stm.value = stm
             #print("session statements: {}".format(stm))
-        
-    """    
-
-        statement_counter = 0
-        session_counter += 1
-        
-        for statement in statements.split("|"):
-            # a statement map to a flink app
-            # a session can owns multiple flinks app/statements
-            flink = Flink()
-            sql_in_json = json.dumps(ransql_parse(statement))
-
-            map_services(sql_in_json, session_counter,
-                         statement_counter, flink)
-            statement_counter += 1
-            flinks_per_session.append(flink)
     """
-
-    #flinks_per_session = config_topics(flinks_per_session)
     
-    #for flink in flinks_per_session:
-    #    print("****statement conf done: object {} with value: {}".format(flink, flink.__dict__ ))
-    
-    #dispatch_services(flinks_per_session)
-
-
-
-
-    """
     t_http_server = threading.Thread(target=run_http_server)
     t_http_server.daemon = True
     t_http_server.start()
@@ -611,5 +620,5 @@ if __name__ == "__main__":
     # asyncio.get_event_loop().run_until_complete(asyncio.gather(*coroutines))
 
     asyncio.get_event_loop().run_forever()
-    """
+    
     
