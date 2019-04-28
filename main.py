@@ -16,12 +16,13 @@ import logging
 
 #import re
 MAX_OPERATOR_PRIORITY = 10
+logging.basicConfig(format='%(asctime)s, line:%(lineno)d:%(levelname)s:%(message)s',level=logging.DEBUG)
 
 all_topics=[]
-input_topics = []
-output_topics = []
+#input_topics = []
+#output_topics = []
 sessions = []
-flink_services = []
+#flink_services = []
 
 
 class Session():
@@ -43,7 +44,9 @@ class Session():
 
     def print(self):
         j_str= str(json.dumps(self, default=lambda o: o.__dict__))
-        print("session {}".format(j_str))
+
+        logging.debug("session config: %s", j_str)
+        
 
             
 class Statement():
@@ -54,9 +57,66 @@ class Statement():
         self.output_topic={'id':0, 'value':'', 'type':'', 'conf':{}}
         self.flinks = self.config_flinks()#self.map_flinks() #Flinks()
         #self.chained_flinks = self.chain_flinks()
+    
+    def dispatch_flinks(self,flinks):
+        for flink in flinks:
+            logging.debug("flink to dispatch: %s", flink)
+            if isinstance(flink, Filter):
+                self.dispatch_filter(flink)
+            elif isinstance(flink, Obj):
+                self.dispatch_obj(flink)
+            elif isinstance(flink, Avg):
+                self.dispatch_avg(flink)
+            elif isinstance(flink, Add):
+                self.dispatch_add(flink)
+            if isinstance(flink, Sorter):
+                self.dispatch_sorter(flink)
+            elif isinstance(flink, AppConnector):
+                self.dispatch_app(flink)
+    
+    def config_basic_dispatcher(self, flink):
+        logging.debug('config basic dispatcher %s, type %s', flink, type(flink) )
+        config =  "java "+ " -Dlog4j.configurationFile=\"" + flink.java_app_path + flink.log4j2 + "\" -jar " + flink.java_app_path +  "/target/" + flink.operation['java_app'] +" --zookeeper.connect " + flink.zookeeper+ " --bootstrap.servers " + flink.brokers+  " --group.id " + flink.group+  " --input-topic " + flink.input_topic['value'] + " --output-topic "+flink.output_topic['value'] + " --thread.nums " + str(flink.thread_num )
+        return config
+        
+    def dispatch_filter(self,filter):
+        logging.debug("disp filer %s", filter.thread_num)
+        cmd = self.config_basic_dispatcher(filter) +  " --conditions " + str(filter.conditions)
+        logging.debug('filter %s', cmd)
+        exe_cmd(cmd)
+
+    def dispatch_obj(self, obj):
+        """
+        cmd = "java -jar "+ \
+        filter['java_app_path'] +  "/target/" + filter['java_app'] +\
+        "-D" + filter['log4j2'] + \
+        " --input_topic " + filter['input_topic']['value'] +\
+        " --output_topic "+filter['output_topic']['value'] +\
+        " --col " + filter['col']
+        
+        exe_cmd(cmd)
+        """
+        pass
+
+    def dispatch_avg(self, avg):
+        pass
+
+    def dispatch_add(self, add):
+        pass
+
+    def dispatch_sorter(self,sorter):
+        pass
+
+    def dispatch_app(self,app):
+        pass
+
+
+
+
 
     def config_flinks(self):
-        #pass
+        #TODO: config brokers/zk
+        #TODO: config group
         flinks = self.map_flinks()
         return self.chain_flinks(flinks)
     
@@ -194,8 +254,8 @@ class Statement():
         chain_operators=self.chain_operators(flinks)
         chain_topics = self.chain_topics(chain_operators, flinks)
 
-        print("chain operators: {}".format(chain_operators))
-        print("chain topics: {}, flinks types {}".format(chain_topics, type(flinks)))
+        #print("chain operators: {}".format(chain_operators))
+        #print("chain topics: {}, flinks types {}".format(chain_topics, type(flinks)))
 
         for f_idx, f_val in enumerate(flinks) :
             if f_idx <= len(flinks )-1 : #ignore the last one
@@ -221,24 +281,25 @@ class Statement():
 
 class Flink():
     STREAM_OPERATIONS={
-        'filter':{'name':'filter', 'priority':0,'transformation':{'from':'STREAM','to':'STREAM'},'java_app':'FlinkFilter.java'}, 
-        'obj':{'name':'obj', 'priority':1,'transformation':{'from':'STREAM','to':'STREAM'},'java_app':'FlinkObjectinize.java'}, 
-        'avg':{'name':'avg', 'priority':1,'transformation':{'from':'STREAM','to':'ACC_STREAM'},'java_app':'FlinkAvg.java'}, 
-        'add':{'name':'add', 'priority':1,'transformation':{'from':'STREAM','to':'STREAM'},'java_app':'FlinkAdder.java'}, 
-        'sorter':{'name':'sorter', 'priority':2,'transformation':{'from':'STREAM','to':'WINDOWSED_STREAM'},'java_app':'FlinkSorter.java'}, 
+        'filter':{'name':'filter', 'priority':0,'transformation':{'from':'STREAM','to':'STREAM'},'java_app':'FlinkFilter.jar'}, 
+        'obj':{'name':'obj', 'priority':1,'transformation':{'from':'STREAM','to':'STREAM'},'java_app':'FlinkFilter.jar'}, 
+        'avg':{'name':'avg', 'priority':1,'transformation':{'from':'STREAM','to':'ACC_STREAM'},'java_app':'FlinkAvg.jar'}, 
+        'add':{'name':'add', 'priority':1,'transformation':{'from':'STREAM','to':'STREAM'},'java_app':'FlinkAdder.jar'}, 
+        'sorter':{'name':'sorter', 'priority':2,'transformation':{'from':'STREAM','to':'WINDOWSED_STREAM'},'java_app':'FlinkSorter.jar'}, 
         'app':{'name':'app', 'priority':3,'transformation':{'from':'STREAM','to':'UNKNOWN'},'java_app':''}
         }
     
     def __init__(self):
-        self.java_app_path = '/home/user/app'
-        self.log4j2 = '-Dlog4j.configurationFile="./conf/log4j2.xml"'
+        self.java_app_path = '/home/yuchia/workspace/flink-stc-spaas'
+        self.log4j2 = "/conf/log4j2.xml"
 
         self.input_topic = {'id':0, 'value':''}
         self.output_topic = {'id':0, 'value':'', 'type':'', 'conf':{}}
+        self.thread_num = 1 
 
-        self.brokers = ''
-        self.zookeeper = ''
-        self.group = ''        
+        self.brokers = '1270.0.0.1:9092'
+        self.zookeeper = '1270.0.0.1:2181'
+        self.group = 'oai'        
         
         self.operation=''
         self.is_mapped =  False
@@ -252,7 +313,7 @@ class Filter(Flink): # a Flink represents a statement, which can contains multip
     def __init__(self):
         Flink.__init__(self)
         self.operation=Flink.STREAM_OPERATIONS['filter']
-        self.conditions = [{'col': '', 'value': '', 'sign': ''}]
+        self.conditions = [{"col": "", "value": "", "sign": ""}]
 
     def __str__(self):
         return super().__str__()
@@ -646,15 +707,14 @@ async def myfun1():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(format='%(asctime)s.%(msecs)s:%(name)s:%(thread)d:%(levelname)s:%(process)d:%(message)s',level=logging.INFO)
     sessions = []
 
     
-    #stm1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
-    #stm2 = "SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, 5000, col1, col2, col3);"
-
     stm1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
-    stm2 = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app('name'='websocket','cols'='*','class'='12345', 5000, col1, col2, col3);"
+    stm2 = "SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE crnti=0  TO app(websocket, 5000, col1, col2, col3);"
+
+    #stm1 = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues)"
+    #stm2 = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app('name'='websocket','cols'='*,col1,col2','class'='12345', 'port'= '5000');"
 
     stms = stm1 + "|" + stm2
 
@@ -668,6 +728,9 @@ if __name__ == "__main__":
     
     for sess in sessions:
         sess.print()
+        for stm in sess.statements:
+            flinks = stm.flinks 
+            stm.dispatch_flinks(flinks)
             #stm.value = stm
             #print("session statements: {}".format(stm))
         
