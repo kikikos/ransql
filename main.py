@@ -123,8 +123,8 @@ class Statement():
         exe_cmd(cmd)
 
     def prioritize_flinks(self, flinks):
-        #TODO: sort by priority of flinks operations
 
+        flinks.sort(key=lambda x: x.operation['priority'])
         return flinks
 
 
@@ -133,9 +133,9 @@ class Statement():
     def config_flinks(self):
         #TODO: config brokers/zk
         #TODO: config group
+        
         flinks = self.map_flinks()
         flinks = self.prioritize_flinks(flinks)
-
         return self.chain_flinks(flinks)
     
     def map_flinks(self):
@@ -293,11 +293,12 @@ class Statement():
             
 
                 chained_flinks.append(f_val)
-
+        """
         if len(chained_flinks) > 2:
             for f in chained_flinks:
                 logging.debug(f)
             exit(0)        
+        """
 
         
         return chained_flinks
