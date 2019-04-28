@@ -81,7 +81,8 @@ class Statement():
         
     def dispatch_filter(self,filter):
         logging.debug("disp filer %s", filter.thread_num)
-        cmd = self.config_basic_dispatcher(filter) +  " --conditions " + str(filter.conditions)
+        cmd = 'xterm  -T "filter" -e ' 
+        cmd += self.config_basic_dispatcher(filter) +  " --conditions " + str(filter.conditions) + " &"
         logging.debug('filter %s', cmd)
         exe_cmd(cmd)
 
