@@ -119,7 +119,7 @@ class Statement():
     def dispatch_ws(self, ws):
         logging.debug("disp ws %s", ws)
         cmd = 'xterm  -T "ws" -hold  -e ' 
-        cmd += self.config_basic_dispatcher(ws) +  " --format " + ws.format +  " --cols " + ws.cols +  " --rows " + ws.rows +  " --class \"" + ws.css_class + "\""  +" --time.unit " + ws.time['unit'] +  " --time.value " + str( ws.time['value']) +  " --port " + ws.port + " &"
+        cmd += self.config_basic_dispatcher(ws) +  " --format " + ws.format +  " --cols " + ws.cols +  " --rows " + ws.rows +  " --class \"" + ws.css_class + "\""  +" --time.unit " + ws.time['unit'] +  " --time.value " + str( ws.time['value']) + " --tag " +ws.tag + " --port " + ws.port + " &"
         logging.debug('ws -- %s', cmd)
         exe_cmd(cmd)
 
@@ -260,6 +260,9 @@ class Statement():
                                             if ws_key =="format":
                                                 #print("****ws_key format :{} and val :{}".format(ws_key,ws_value))
                                                 ws.format = ws_value
+                                            
+                                            if ws_key =="tag":
+                                                ws.tag = ws_value
                                             
                                             if ws_key =="cols":
                                                 #print("****ws_key cols :{} and val :{}".format(ws_key,ws_value))                                                
@@ -486,6 +489,7 @@ class WebsocketConnector(AppConnector, Timer):
         self.rows ="\*"
         self.css_class=""
         self.port = "50000"
+        self.tag=""
 
         #self.conf = {}
 

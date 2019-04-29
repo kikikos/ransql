@@ -123,8 +123,8 @@
 
 <script>
 
-    var usecase_1_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE m_id=0 TO app('name'='websocket','format'='table','cols'='*','rows'='*','class'='table table-striped', 'ms'='1');";
-    var usecase_2_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT ADD(total_rbs_used, total_rbs_used_rx) as total_rbs_tx_rx FROM ues ORDER BY total_rbs_tx_rx DESC LIMIT (1,10) TIME ms(1000) TO app('name'='websocket','format'='table','cols'='col1,col2','rows'='5','class'='table table-striped', 'second'='5');";
+    var usecase_1_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE m_id=0 TO app('name'='websocket','format'='table','cols'='*','rows'='1','class'='table table-striped', 'ms'='1', 'tag'='1');";
+    var usecase_2_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT ADD(total_rbs_used, total_rbs_used_rx) as total_rbs_tx_rx FROM ues ORDER BY total_rbs_tx_rx DESC LIMIT (1,10) TIME ms(1000) TO app('name'='websocket','format'='table','cols'='crnti,total_rbs_used,total_rbs_used_rx,total_rbs_tx_rx','rows'='*','class'='table table-striped', 'second'='5', 'tag'='2');";
     //var usecase_2_sqlstatement = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM enb1-ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);";
     document.getElementById("textfield-usecase-1-sql").value = usecase_1_sqlstatement;
     document.getElementById("textfield-usecase-2-sql").value = usecase_2_sqlstatement;
@@ -178,14 +178,18 @@
     
         ws.onmessage = function (event) {
         console.log(event.data);
-        obj = JSON.parse(event.data);
+        var json = JSON.parse(event.data);
+        if (json['tag'] == '1'){
+            document.getElementById("table-usecase-1").innerHTML = json['response'];
+        }else if (json['tag'] == '2'){
+            document.getElementById("table-usecase-2").innerHTML = json['response'];
 
-        //var messages = document.getElementsByTagName('ul')[0],
-        //message = document.createElement('li'),
-        //content = document.createTextNode(event.data);
+        }
+
+        
+        
 
     };
-    //document.body.appendChild(messages);
 
 </script>
 
