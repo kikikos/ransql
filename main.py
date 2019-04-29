@@ -93,7 +93,7 @@ class Statement():
     def dispatch_avg(self, avg):
         logging.debug("disp avg %s", avg)
         cmd = 'xterm  -T "avg" -hold  -e ' 
-        cmd += self.config_basic_dispatcher(avg) +  " --col " + avg.col + " --time.unit " + avg.time['unit'] + " --time.value " + str(avg.time['value'] )+" &"
+        cmd += self.config_basic_dispatcher(avg) + " --operation avg "+ " --col " + avg.col + " --time.unit " + avg.time['unit'] + " --time.value " + str(avg.time['value'] )+" &"
         logging.debug('avg -- %s', cmd)
         exe_cmd(cmd)
         
