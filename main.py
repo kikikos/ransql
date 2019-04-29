@@ -119,7 +119,7 @@ class Statement():
     def dispatch_ws(self, ws):
         logging.debug("disp ws %s", ws)
         cmd = 'xterm  -T "ws" -hold  -e ' 
-        cmd += self.config_basic_dispatcher(ws) +  " --format " + ws.format +  " --cols " + ws.cols +  " --rows " + ws.rows +  " --class " + ws.css_class +  " --port " + ws.port + " &"
+        cmd += self.config_basic_dispatcher(ws) +  " --format " + ws.format +  " --cols " + ws.cols +  " --rows " + ws.rows +  " --class \"" + ws.css_class + "\""  +" --time.unit " + ws.time['unit'] +  " --time.value " + str( ws.time['value']) +  " --port " + ws.port + " &"
         logging.debug('ws -- %s', cmd)
         exe_cmd(cmd)
 
@@ -275,6 +275,10 @@ class Statement():
                                             if ws_key =="port":
                                                 ws.port = ws_value
 
+                                            if ws_key == "second" or ws_key == "ms" or ws_key == "minute" or ws_key == "hour":
+                                                ws.time['unit'] = ws_key
+                                                ws.time['value'] = ws_value 
+
 
                                         flinks.append(ws)
                                         logging.info("ws app: %s", ws)
@@ -401,9 +405,11 @@ class Flink():
         self.operation=''
         self.is_mapped =  False
         self.is_conf_complete = False
-        
-    def __str__(self):
-        return str(json.dumps(self, default=lambda o: o.__dict__))
+
+class Timer():
+    def __init__(self):
+        self.time = {'unit': '', 'value': 0}
+
         
         
 class Filter(Flink): # a Flink represents a statement, which can contains multiple flink apps
@@ -416,12 +422,13 @@ class Filter(Flink): # a Flink represents a statement, which can contains multip
         return super().__str__()
 
 
-class Avg(Flink): 
+class Avg(Flink, Timer): 
     def __init__(self):
         Flink.__init__(self)
+        Timer.__init__(self)
         self.operation=Flink.STREAM_OPERATIONS['avg']
         self.col = ''
-        self.time = {'unit': '', 'value': 0}
+        #self.time = {'unit': '', 'value': 0}
 
     def __str__(self):
         return super().__str__()
@@ -446,13 +453,14 @@ class Obj(Flink):
     def __str__(self):
         return super().__str__()
 
-class Sorter(Flink):
+class Sorter(Flink, Timer):
     def __init__(self):
         Flink.__init__(self)
+        Timer.__init__(self)
         self.operation=Flink.STREAM_OPERATIONS['sorter']
         self.col = ''
         self.order=''
-        self.time = {'unit': '', 'value': 0}
+        #self.time = {'unit': '', 'value': 0}
         self.limit ={'bottom':0,'ceil':0}
 
     def __str__(self):
@@ -467,10 +475,11 @@ class AppConnector(Flink):
     def __str__(self):
         return super().__str__()
 
-class WebsocketConnector(AppConnector):
+class WebsocketConnector(AppConnector, Timer):
     def __init__(self):
         AppConnector.__init__(self)
-        self.operation=Flink.STREAM_OPERATIONS['app']
+        Timer.__init__(self)
+        #self.operation=Flink.STREAM_OPERATIONS['app']
         self.name = "websocket"
         self.format ="plaintext" #plaintext, single-row-table, multiple-rows-table
         self.cols ="\*"
@@ -591,7 +600,6 @@ async def websocket_handler(websocket, path):
         for message in consumer:
             print(message.value.decode("utf-8"))
             await websocket.send( message.value.decode("utf-8"))
-            cnt +=1
     
 
 
