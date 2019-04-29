@@ -574,18 +574,24 @@ def run_http_server(port=8888):
         print("serving at port", port)
         httpd.serve_forever()
 
+def websocket_send(websocket, msg):
+    websocket.send( msg)
+
+
 
 async def websocket_handler(websocket, path):
     kafka_topic = "websocket"
     kafka_group = "oai"
     kafka_brokers = "127.0.0.1:9092"
 
-    #consumer = KafkaConsumer(kafka_topic, auto_offset_reset='latest',enable_auto_commit=False, group_id=kafka_group, bootstrap_servers=[kafka_brokers])
-
+    consumer = KafkaConsumer(kafka_topic, auto_offset_reset='latest',enable_auto_commit=False, group_id=kafka_group, bootstrap_servers=[kafka_brokers])
+    
     while True:
-        now = datetime.datetime.utcnow().isoformat() + 'Z'
-        await websocket.send(now)
-        await asyncio.sleep(random.random() * 3)
+        for message in consumer:
+            print(message.value.decode("utf-8"))
+            await websocket.send( message.value.decode("utf-8"))
+            cnt +=1
+    
 
 
 async def myfun1():
@@ -596,6 +602,22 @@ async def myfun1():
 
 
 if __name__ == "__main__":
+    
+    t_http_server = threading.Thread(target=run_http_server)
+    t_http_server.daemon = True
+    t_http_server.start()
+
+    websocket_server = websockets.serve(websocket_handler, '0.0.0.0', 5678)
+    coroutines = (websocket_server) 
+    asyncio.get_event_loop().run_until_complete(asyncio.gather(coroutines))    
+
+    # or more coroutines example: 
+    # coroutines = (websocket_server, myfun1())
+    # asyncio.get_event_loop().run_until_complete(asyncio.gather(*coroutines))
+
+    asyncio.get_event_loop().run_forever()
+    
+    #test codes
     """
     sessions = []
 
@@ -620,20 +642,4 @@ if __name__ == "__main__":
             stm.dispatch_flinks(flinks)
             #stm.value = stm
             #print("session statements: {}".format(stm))
-    """
-    
-    t_http_server = threading.Thread(target=run_http_server)
-    t_http_server.daemon = True
-    t_http_server.start()
-
-    websocket_server = websockets.serve(websocket_handler, '0.0.0.0', 5678)
-    coroutines = (websocket_server) 
-    asyncio.get_event_loop().run_until_complete(asyncio.gather(coroutines))    
-
-    # or more coroutines example: 
-    # coroutines = (websocket_server, myfun1())
-    # asyncio.get_event_loop().run_until_complete(asyncio.gather(*coroutines))
-
-    asyncio.get_event_loop().run_forever()
-    
-    
+    """    

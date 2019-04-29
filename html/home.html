@@ -39,7 +39,7 @@
     </div>
 
 
-    <div class="container">
+    <div class="container" id="table-usecase-1">
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -101,7 +101,7 @@
     </div>
 
 
-    <div class="container">
+    <div class="container" id="table-usecase-2">
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -161,7 +161,7 @@
 
 
     document.getElementById("submit-usecase-1").onclick = function () {
-        data = "?q=\"" + document.getElementById(txtfield_usecase_id_1).value + "\"&field=\""+ txtfield_usecase_id_1 +"\""
+        data = "?q=\"" + document.getElementById(txtfield_usecase_id_1).value + "\"&field=\"" + txtfield_usecase_id_1 + "\""
         //_url = url + data
         //request.open('GET', _url, true)
         //request.send()
@@ -177,7 +177,7 @@
     };
 
     document.getElementById("submit-usecase-2").onclick = function () {
-        data = "?q=\"" + document.getElementById(txtfield_usecase_id_2).value + "\"&field=\""+ txtfield_usecase_id_2 +"\""
+        data = "?q=\"" + document.getElementById(txtfield_usecase_id_2).value + "\"&field=\"" + txtfield_usecase_id_2 + "\""
         submit_request(data)
     };
 
@@ -190,16 +190,19 @@
     };
 
 
-    var ws = new WebSocket("ws://127.0.0.1:5678/"),
-        messages = document.createElement('ul');
-    ws.onmessage = function (event) {
-        var messages = document.getElementsByTagName('ul')[0],
-            message = document.createElement('li'),
-            content = document.createTextNode(event.data);
-        message.appendChild(content);
-        messages.appendChild(message);
+    var ws = new WebSocket("ws://127.0.0.1:5678/");
+        //messages = document.createElement('ul');
+    
+        ws.onmessage = function (event) {
+        console.log(event.data);
+        obj = JSON.parse(event.data);
+
+        //var messages = document.getElementsByTagName('ul')[0],
+        //message = document.createElement('li'),
+        //content = document.createTextNode(event.data);
+
     };
-    document.body.appendChild(messages);
+    //document.body.appendChild(messages);
 
 </script>
 
