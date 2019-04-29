@@ -119,7 +119,7 @@ class Statement():
     def dispatch_ws(self, ws):
         logging.debug("disp ws %s", ws)
         cmd = 'xterm  -T "ws" -hold  -e ' 
-        cmd += self.config_basic_dispatcher(ws) +  " --html " + ws.html +  " --cols " + ws.cols +  " --class " + ws.css_class +  " --port " + ws.port + " &"
+        cmd += self.config_basic_dispatcher(ws) +  " --format " + ws.format +  " --cols " + ws.cols +  " --rows " + ws.rows +  " --class " + ws.css_class +  " --port " + ws.port + " &"
         logging.debug('ws -- %s', cmd)
         exe_cmd(cmd)
 
@@ -254,19 +254,19 @@ class Statement():
                                         for ws_conf in flink.conf:
                                             ws_key=ws_conf["eq"]["literal"][0]
                                             ws_value=ws_conf["eq"]["literal"][1]
-                                            
-                                            if ws_key =="html":
-                                                #print("****ws_key html :{} and val :{}".format(ws_key,ws_value))
-                                                ws.html = ws_value
+                                            if ws_value =="*":
+                                                ws_value ="\*"
+
+                                            if ws_key =="format":
+                                                #print("****ws_key format :{} and val :{}".format(ws_key,ws_value))
+                                                ws.format = ws_value
                                             
                                             if ws_key =="cols":
-                                                #print("****ws_key cols :{} and val :{}".format(ws_key,ws_value))
-                                                
-                                                if ws_value =="*":
-                                                    ws.cols =="\*"
-                                                else:
-                                                    ws.cols = ws_value
-
+                                                #print("****ws_key cols :{} and val :{}".format(ws_key,ws_value))                                                
+                                                ws.cols = ws_value
+                                            
+                                            if ws_key =="rows":
+                                                ws.rows = ws_value
 
                                             if ws_key == "class" or ws_key =="css_class":
                                                 #print("****ws_key class :{} and val :{}".format(ws_key,ws_value))
@@ -472,8 +472,9 @@ class WebsocketConnector(AppConnector):
         AppConnector.__init__(self)
         self.operation=Flink.STREAM_OPERATIONS['app']
         self.name = "websocket"
-        self.html ="table"
+        self.format ="plaintext" #plaintext, single-row-table, multiple-rows-table
         self.cols ="\*"
+        self.rows ="\*"
         self.css_class=""
         self.port = "50000"
 
