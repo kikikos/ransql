@@ -123,7 +123,7 @@
 
 <script>
 
-    var usecase_1_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE m_id=0 TO app('name'='websocket','format'='table','cols'='*','rows'='1','class'='table table-striped', 'ms'='1', 'tag'='1');";
+    var usecase_1_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE m_id=0 TO app('name'='websocket','format'='table','cols'='time_start_txt,time_end_txt,col,short_result','rows'='1','class'='table table-striped', 'ms'='1', 'tag'='1');";
     var usecase_2_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT ADD(total_rbs_used, total_rbs_used_rx) as total_rbs_tx_rx FROM ues ORDER BY total_rbs_tx_rx DESC LIMIT (1,10) TIME ms(1000) TO app('name'='websocket','format'='table','cols'='crnti,total_rbs_used,total_rbs_used_rx,total_rbs_tx_rx','rows'='*','class'='table table-striped', 'second'='5', 'tag'='2');";
     //var usecase_2_sqlstatement = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM enb1-ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);";
     document.getElementById("textfield-usecase-1-sql").value = usecase_1_sqlstatement;
