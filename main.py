@@ -13,11 +13,12 @@ import random
 import threading
 import subprocess
 import logging
+import getpass
 
 #import re
 MAX_OPERATOR_PRIORITY = 10
 logging.basicConfig(format='%(asctime)s, line:%(lineno)d:%(levelname)s:%(message)s',level=logging.INFO)
-
+passwd = ""
 all_topics=[]
 sessions = []
 
@@ -626,10 +627,11 @@ def set_password():
     pass
 
 def kill_pids(pid_key_word):
+    global passwd
     for pid in get_pids(pid_key_word):
         logging.info("killing pid %s", pid)
         #echo Chia1984 | sudo -S apt update
-        cmd =  ' echo Chia1984 |  sudo -S kill -9 ' + pid 
+        cmd =  ' echo ' + passwd + ' |  sudo -S kill -9 ' + pid 
         exe_cmd(cmd)   
 
 def get_pids(grep_item):
@@ -650,8 +652,15 @@ def get_pids(grep_item):
         print ("p : ", p)
     """
     return pids   
+def main():
+    global passwd
+    
+    print("Enter sudo password:")
+    passwd = getpass.getpass()
 
 if __name__ == "__main__":
+    main()
+
     
     t_http_server = threading.Thread(target=run_http_server)
     t_http_server.daemon = True

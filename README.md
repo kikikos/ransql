@@ -7,6 +7,7 @@ $pip3 install mo-future
 $pip3 install pyparsing
 $pip3 install websockets
 $pip3 install kafka-python
+$pip3 install pypassword
 
 ```
 
