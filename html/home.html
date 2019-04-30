@@ -39,37 +39,7 @@
     </div>
 
 
-    <div class="container" id="table-usecase-1">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">First</th>
-                    <th scope="col">Last</th>
-                    <th scope="col">Handle</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <th scope="row">1</th><td>Mark</td><td>Otto</td><td>@mdo</td>
-                </tr>
-                <tr>
-                    <th scope="row">2</th>
-                    <td>Jacob</td>
-                    <td>Thornton</td>
-                    <td>@fat</td>
-                </tr>
-                <tr>
-                    <th scope="row">3</th>
-                    <td>Larry</td>
-                    <td>the Bird</td>
-                    <td>@twitter</td>
-                </tr>
-            </tbody>
-        </table>
-
-
-    </div>
+    <div class="container" id="table-usecase-1">    </div>
 
 
     <div class="container">
@@ -98,33 +68,14 @@
     </div>
 
 
-    <div class="container" id="table-usecase-2">   
-            <table class="table table-striped">
-                <thead>
-                    <tr><th scope="col">m_timestamp_nano</th>
-                        <th scope="col">ue_nums</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td>1556113502300540</td><td>2</td>
-
-                    </tr>
-                    <tr><td>1556113503295802</td><td>2</td></tr>
-                    <tr><td>1556113504301179</td><td>2</td></tr>
-                    <tr><td>1556113505296577</td><td>2</td></tr>
-                    <tr><td>1556113506301975</td><td>2</td></tr>
-                    <tr><td>1556113507297425</td><td>2</td></tr>
-                </tbody>
-            </table>   
-        
-        </div>
+    <div class="container" id="table-usecase-2">   </div>
 
 </body>
 
 <script>
 
-    var usecase_1_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT AVG(total_pdu_bytes_rx) TIME second(1) FROM ues WHERE m_id=0 TO app('name'='websocket','format'='table','cols'='time_start_txt,time_end_txt,col,short_result','rows'='1','class'='table table-striped', 'ms'='1', 'tag'='1');";
-    var usecase_2_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT ADD(total_rbs_used, total_rbs_used_rx) as total_rbs_tx_rx FROM ues ORDER BY total_rbs_tx_rx DESC LIMIT (1,10) TIME ms(1000) TO app('name'='websocket','format'='table','cols'='crnti,total_rbs_used,total_rbs_used_rx,total_rbs_tx_rx','rows'='*','class'='table table-striped', 'second'='5', 'tag'='2');";
+    var usecase_1_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT AVG(total_pdu_bytes_rx) TIME second(2) FROM ues WHERE m_id=0 TO app('name'='websocket','format'='table','cols'='time_start_txt,time_end_txt,col,short_result','rows'='1','class'='table table-striped', 'ms'='100', 'tag'='1');";
+    var usecase_2_sqlstatement = "SELECT OBJ(ue_list) FROM eNB1 TO table(ues) | SELECT ADD(total_rbs_used, total_rbs_used_rx) as total_rbs_tx_rx FROM ues ORDER BY total_rbs_tx_rx DESC LIMIT (1,10) TIME ms(2000) TO app('name'='websocket','format'='table','cols'='crnti,total_rbs_used,total_rbs_used_rx,total_rbs_tx_rx','rows'='*','class'='table table-striped', 'second'='3', 'tag'='2');";
     //var usecase_2_sqlstatement = "SELECT ADD(rbs_used, rbs_used_rx) as total FROM enb1-ues ORDER BY total DESC LIMIT (1,10) TIME ms(1000) TO app(websocket, locathost, 5000);";
     document.getElementById("textfield-usecase-1-sql").value = usecase_1_sqlstatement;
     document.getElementById("textfield-usecase-2-sql").value = usecase_2_sqlstatement;
@@ -153,7 +104,7 @@
 
     document.getElementById("cancel-usecase-1").onclick = function () {
         //empty textfield and table
-        document.getElementById(txtfield_usecase_id_1).value = ""
+        //document.getElementById(txtfield_usecase_id_1).value = ""
 
         data = "?q=\"cancel-usecase-1\""
         submit_request(data)
@@ -166,7 +117,7 @@
 
     document.getElementById("cancel-usecase-2").onclick = function () {
         //empty textfield and table
-        document.getElementById(txtfield_usecase_id_2).value = ""
+        //document.getElementById(txtfield_usecase_id_2).value = ""
 
         data = "?q=\"cancel-usecase-2\""
         submit_request(data)

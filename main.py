@@ -547,11 +547,12 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         if payload == "cancel-usecase-1":
             # TODO
+            kill_usecase1()
             content = self._handle_http(201, "cancel_usecase_1_ok")
             self.wfile.write(content)
 
         elif payload == "cancel-usecase-2":
-            # TODO
+            kill_usecase2()
             content = self._handle_http(202, "cancel_usecase_2_ok")
             self.wfile.write(content)
 
@@ -613,6 +614,42 @@ async def myfun1():
     # time.sleep(1)
     print('-- finish {}th'.format(2))
 
+def kill_usecase1():
+    for pid_key_word in ["FlinkFilter.jar", "FlinkAccumulator.jar", "FlinkListObjectizer.jar", "WebsocketConnector.jar"]:
+        kill_pids(pid_key_word)
+
+def kill_usecase2():
+    for pid_key_word in ["FlinkSorter.jar", "FlinkListObjectizer.jar", "WebsocketConnector.jar","FlinkColAdder.jar"]:
+        kill_pids(pid_key_word)
+
+def set_password():
+    pass
+
+def kill_pids(pid_key_word):
+    for pid in get_pids(pid_key_word):
+        logging.info("killing pid %s", pid)
+        #echo Chia1984 | sudo -S apt update
+        cmd =  ' echo Chia1984 |  sudo -S kill -9 ' + pid 
+        exe_cmd(cmd)   
+
+def get_pids(grep_item):
+    cmd = "ps ax | grep "+ grep_item +" | awk '{print $1}'"
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+    print("get pids:", cmd)
+    
+    (output, err) = p.communicate()
+    
+    pids=[]
+
+    for pid in output.decode("utf-8").replace(" ","").split("\n"):
+        if not pid == "":
+            pids.append(pid)
+
+    """
+    for p in pids:
+        print ("p : ", p)
+    """
+    return pids   
 
 if __name__ == "__main__":
     
